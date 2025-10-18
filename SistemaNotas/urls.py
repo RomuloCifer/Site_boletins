@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin-tools/', include('admin_panel.urls')),  # URLs do painel administrativo
+    path('portal/', include('teacher_portal.urls')),  # URLs do portal do professor
 ]

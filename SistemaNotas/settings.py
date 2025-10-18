@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'admin_panel', 
-    # 'teacher_portal', # Em breve
+    'teacher_portal', 
 ]
 
 MIDDLEWARE = [
@@ -125,3 +125,13 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+LOGIN_URL = 'teacher_portal:login'
+
+# 2. Após um login bem-sucedido (se ele não estava tentando ir
+#    para outra página), para onde ele deve ser enviado?
+LOGIN_REDIRECT_URL = 'teacher_portal:dashboard' # Vamos criar essa URL em breve
+
+# 3. Após o logout, para onde ele deve ser enviado?
+LOGOUT_REDIRECT_URL = 'teacher_portal:login'
