@@ -1,12 +1,21 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin_panel/css/importar_page.css' %}">
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div id="content-main">
+
+    <a href="{% url 'admin:index' %}" class="back-button">
+        &larr; Voltar ao Painel Principal
+    </a>
+
     <h1>Importar Alunos para Turma</h1>
-    <p>Por favor, utilize arquivos CSV ou Excel (.xlsx, .xls) com as colunas <code>nome_completo</code> e opcionalmente <code>matricula</code>.</p>
 
     {% if messages %}
         <ul class="messages">
@@ -16,28 +25,44 @@
         </ul>
     {% endif %}
 
-    <form method="POST" enctype="multipart/form-data">
-        {% csrf_token %}
+    <div class="import-layout">
 
-        <label for="turma_id">Selecione a Turma:</label>
-        <select name="turma_id" id="turma_id" required>
-            <option value="">--- Selecione ---</option>
-            {% for turma in turmas %}
-            <option value="{{ turma.pk }}">
-                {{ turma.nome }} ({{ turma.identificador_turma }})
-            </option>
-            {% endfor %}
-        </select>
-        <br><br>
+        <div class="form-panel">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
 
-        <label for="arquivo_alunos">Arquivo CSV/Excel:</label>
-        <input type="file" name="arquivo_alunos" id="arquivo_alunos" accept=".csv, .xlsx, .xls" required>
-        <br><br>
+                <label for="turma_id">Selecione a Turma:</label>
+                <select name="turma_id" id="turma_id" required>
+                    <option value="">--- Selecione ---</option>
+                    {% for turma in turmas %}
+                    <option value="{{ turma.pk }}">
+                        {{ turma.nome }} ({{ turma.identificador_turma }})
+                    </option>
+                    {% endfor %}
+                </select>
+                <br><br>
 
-        <button type="submit">Importar Alunos</button>
-    </form>
+                <label for="arquivo_alunos">Arquivo CSV/Excel:</label>
+                <input type="file" name="arquivo_alunos" id="arquivo_alunos" accept=".csv, .xlsx, .xls" required>
+                <br><br>
 
-    <p>Você pode acessar este painel em: <a href="{% url 'admin_panel:importar_alunos' %}">/admin-tools/importar-alunos/</a></p>
+                <button type="submit" class="default">Importar Alunos</button>
+            </form>
+        </div>
 
-</body>
-</html>
+        <div class="tip-panel">
+            <h3>Como Formatar seu Arquivo</h3>
+            <p>
+                Por favor, envie um arquivo <strong>CSV</strong> ou <strong>Excel (.xlsx, .xls)</strong>.
+            </p>
+            <p>
+                O arquivo <strong>deve</strong> conter a coluna <code>nome_completo</code>.
+                A coluna <code>matricula</code> é opcional.
+            </V>
+
+            <strong>Exemplo:</strong>
+            <img src="{% static 'admin_panel/images/exemplo-importacao.png' %}" alt="Exemplo de planilha Excel com colunas nome_completo e matricula">
+        </div>
+
+    </div> </div>
+{% endblock %}

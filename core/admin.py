@@ -32,6 +32,8 @@ class TurmaAdmin(admin.ModelAdmin):
     search_fields = ('nome', 'identificador_turma') # Campos pesquisáveis
     inlines = [AlunoInline] # Adiciona o inline de Aluno
 
+    filter_horizontal = ('competencias',) # Filtro horizontal para ManyToManyField
+
     def get_total_alunos(self, obj):
         return obj.alunos.count()
     get_total_alunos.short_description = 'Total de Alunos'
