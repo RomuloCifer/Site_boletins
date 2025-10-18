@@ -1,0 +1,45 @@
+# --- Ambiente Virtual ---
+# OBRIGATÓRIO. Esta pasta contém todos os pacotes instalados e é
+# específica da sua máquina. Outros devs vão criar a sua.
+venv/
+
+# --- Cache do Python ---
+# OBRIGATÓRIO. Pastas que o Python cria automaticamente.
+__pycache__/
+*.pyc
+
+# --- Banco de Dados Local ---
+# CRÍTICO. Nunca envie seu banco de dados de desenvolvimento.
+# Ele muda a cada teste e pode conter dados sensíveis.
+db.sqlite3
+*.sqlite3
+
+# --- Arquivos Temporários / Pessoais ---
+# Para arquivos como o .zip que você tem na pasta.
+*.zip
+*.rar
+*.log
+
+# (Opcional, mas boa prática para equipes)
+# Arquivos de Sistema Operacional (ex: macOS)
+.DS_Store
+
+# --- Arquivos de IDE (Editor de Código) ---
+# (Opcional, mas recomendado)
+.vscode/
+.idea/
+
+# --- Arquivos de Mídia (Uploads) ---
+# Em breve, quando tivermos uploads (ex: PDFs dos boletins),
+# eles irão para cá e não devem ser versionados.
+media/
+
+# --- Arquivos Estáticos Compilados ---
+# Quando você "publicar" o site, o Django juntará
+# todos os arquivos CSS/JS aqui. Não deve ser versionado.
+staticfiles/
+
+# --- Arquivos de Segredos ---
+# CRÍTICO. Vamos criar este arquivo em breve para guardar
+# sua 'SECRET_KEY' e senhas de banco de dados.
+.env

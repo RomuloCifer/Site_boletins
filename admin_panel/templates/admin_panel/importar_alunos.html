@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>Importar Alunos para Turma</h1>
+    <p>Por favor, utilize arquivos CSV ou Excel (.xlsx, .xls) com as colunas <code>nome_completo</code> e opcionalmente <code>matricula</code>.</p>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <label for="turma_id">Selecione a Turma:</label>
+        <select name="turma_id" id="turma_id" required>
+            <option value="">--- Selecione ---</option>
+            {% for turma in turmas %}
+            <option value="{{ turma.pk }}">
+                {{ turma.nome }} ({{ turma.identificador_turma }})
+            </option>
+            {% endfor %}
+        </select>
+        <br><br>
+
+        <label for="arquivo_alunos">Arquivo CSV/Excel:</label>
+        <input type="file" name="arquivo_alunos" id="arquivo_alunos" accept=".csv, .xlsx, .xls" required>
+        <br><br>
+
+        <button type="submit">Importar Alunos</button>
+    </form>
+
+    <p>Você pode acessar este painel em: <a href="{% url 'admin_panel:importar_alunos' %}">/admin-tools/importar-alunos/</a></p>
+
+</body>
+</html>

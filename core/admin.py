@@ -13,10 +13,10 @@ class ProfessorUserAdmin(BaseUserAdmin): # Extende o UserAdmin padrão
     inlines = (ProfessorInline,) # Adiciona o inline de Professor
 
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        None, {'fields': ('is_staff',)}
+        (None, {'fields': ('is_staff',)}), 
     )
-    admin.site.unregister(User) # Desregistra o modelo User padrão
-    admin.site.register(User, ProfessorUserAdmin) # Registra o User com o novo admin
+admin.site.unregister(User) # Desregistra o modelo User padrão
+admin.site.register(User, ProfessorUserAdmin) # Registra o User com o novo admin
 
 # -----------------------------------------------------------
 # 2. Registros (Turma, Competencia, Notas)
@@ -43,6 +43,6 @@ class CompetenciaAdmin(admin.ModelAdmin):
 
 @admin.register(LancamentoDeNota)
 class LancamentoDeNotaAdmin(admin.ModelAdmin):
-    list_display = ('aluno', 'competencia', 'valor_nota') # Campos exibidos na lista
+    list_display = ('aluno', 'competencia', 'nota_valor') # Campos exibidos na lista
     list_filter = ('competencia',) # Filtros laterais
     search_fields = ('aluno__nome_completo', 'competencia__nome') # Campos pesquisáveis

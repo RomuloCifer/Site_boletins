@@ -1,7 +1,7 @@
 # core/models.py
 
-from django.db import models
-from django.contrib.auth.models import User # Reutilizando o sistema de usuário do Django (Melhor Prática!)
+from django.db import models # type: ignore
+from django.contrib.auth.models import User # Reutilizando o sistema de usuário do Django (Melhor Prática!) # type: ignore
 
 # -----------------------------------------------------------
 # Módulo de Usuários e Entidades Base
@@ -69,7 +69,7 @@ class Competencia(models.Model):
         default='NUM'
     )
     def __str__(self):
-        return f"{self.nome} ({self.get_tipo_nota_display()})" # Exibe o nome e o tipo de nota
+        return f"{self.nome} ({self.get_tipo_nota_display()})" # Exibe o nome e o tipo de nota #type:ignore
     class Meta:
         verbose_name_plural = "Competências"
         ordering = ['nome'] # Ordena por nome da competência

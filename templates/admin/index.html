@@ -1,0 +1,26 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block sidebar %}
+    {{ block.super }}
+
+    <div class="app-admin_panel module">
+        <table>
+            <caption>
+                <a href="{% url 'admin_panel:importar_alunos' %}" class="section" 
+                   title="Ferramentas Customizadas">
+                   Ferramentas do Site
+                </a>
+            </caption>
+            
+            <tr class="model-group">
+                <th scope="row">
+                    <a href="{% url 'admin_panel:importar_alunos' %}">
+                        Importar Alunos (CSV/Excel)
+                    </a>
+                </th>
+                <td><a href="{% url 'admin_panel:importar_alunos' %}" class="addlink">Importar</a></td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}
