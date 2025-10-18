@@ -19,22 +19,23 @@ class Professor(models.Model):
     def __str__(self):
         return self.user.get_full_name() or self.user.username  # Exibe o nome completo ou o nome de usuário
     
-    class Turma(models.Model): # Representa uma turma
-        nome = models.CharField(max_length=100)
-        identificador_turma = models.CharField(max_length=100, help_text="Ex: A2, 2025/1 Tarde, 2a e 4a") # Identificador único da turma
-        professor_responsavel = models.ForeignKey(  # Relaciona a turma a um professor
-            Professor,
-            on_delete=models.SET_NULL,
-            null=True,
-            blank=True,
-            related_name='turmas')
-        def __str__(self):
-            return self.nome # Exibe o nome da turma
+class Turma(models.Model): # Representa uma turma
+    nome = models.CharField(max_length=100)
+    identificador_turma = models.CharField(max_length=100, help_text="Ex: A2, 2025/1 Tarde, 2a e 4a") # Identificador único da turma
+    professor_responsavel = models.ForeignKey(  # Relaciona a turma a um professor
+        Professor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='turmas')
+    def __str__(self):
+        return self.nome # Exibe o nome da turma
         
-        class Meta: # Define o nome plural correto no admin
-            verbose_name_plural = "Turmas"
-            ordering = ['nome'] # Ordena por nome da turma
-            unique_together = ('nome', 'identificador_turma') # Garante que o nome da turma seja único
+    class Meta: # Define o nome plural correto no admin
+        verbose_name_plural = "Turmas"
+        ordering = ['nome'] # Ordena por nome da turma
+        unique_together = ('nome', 'identificador_turma') # Garante que o nome da turma seja único
+
 class Aluno(models.Model):
     """Representa um aluno."""
     nome_completo = models.CharField(max_length=200)
@@ -67,3 +68,32 @@ class Competencia(models.Model):
         choices=TIPO_NOTA_CHOICES,
         default='NUM'
     )
+    def __str__(self):
+        return f"{self.nome} ({self.get_tipo_nota_display()})" # Exibe o nome e o tipo de nota
+    class Meta:
+        verbose_name_plural = "Competências"
+        ordering = ['nome'] # Ordena por nome da competência
+
+    
+class LancamentoDeNota(models.Model):
+    """Lançamento de nota para um aluno em uma competência."""
+    aluno = models.ForeignKey(
+        Aluno,
+        on_delete=models.CASCADE,
+        related_name='lancamentos_de_nota'
+    )
+    competencia = models.ForeignKey(
+        Competencia,
+        on_delete=models.CASCADE,
+        related_name='lancamentos_de_nota'
+    )
+    nota_valor = models.CharField(max_length=10, help_text="Valor da nota (ex: 85 ou A)") # Armazena a nota como string para flexibilidade
+    data_lancamento = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Nota {self.nota_valor} para {self.aluno.nome_completo} em {self.competencia.nome}"
+        
+    class Meta:
+        verbose_name_plural = "Lançamentos de Notas"
+        ordering = ['-data_lancamento'] # Ordena por data de lançamento, mais recente primeiro
+        unique_together = ('aluno', 'competencia') # Garante que um aluno tenha apenas uma nota por competência
