@@ -31,14 +31,21 @@
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <label for="turma_id">Selecione a Turma:</label>
+                <label for="turma_id">Selecione o Modo de Importação:</label>
                 <select name="turma_id" id="turma_id" required>
-                    <option value="">--- Selecione ---</option>
-                    {% for turma in turmas %}
-                    <option value="{{ turma.pk }}">
-                        {{ turma.nome }} ({{ turma.identificador_turma }})
-                    </option>
-                    {% endfor %}
+                    <option value="">--- Selecione um modo ---</option>
+                    <optgroup label="Modo em Lote">
+                        <option value="lote" style="font-weight: bold; color: #66bb6a;">
+                            Importar Múltiplas Turmas (em Lote)
+                        </option>
+                    </optgroup>
+                    <optgroup label="Turma Específica">
+                        {% for turma in turmas %}
+                        <option value="{{ turma.pk }}">
+                            {{ turma.nome }} ({{ turma.identificador_turma }})
+                        </option>
+                        {% endfor %}
+                    </optgroup>
                 </select>
                 <br><br>
 
@@ -58,10 +65,30 @@
             <p>
                 O arquivo <strong>deve</strong> conter a coluna <code>nome_completo</code>.
                 A coluna <code>matricula</code> é opcional.
-            </V>
-
+            </p>
             <strong>Exemplo:</strong>
             <img src="{% static 'admin_panel/images/exemplo-importacao.png' %}" alt="Exemplo de planilha Excel com colunas nome_completo e matricula">
+        </div>
+
+        <div class="tip-panel">
+            <h3>Como Formatar seu Arquivo</h3>
+            <p>
+                O arquivo <strong>deve</strong> conter a coluna <code>nome_completo</code>.
+                A coluna <code>matricula</code> é opcional.
+            </p>
+            
+            <hr style="border-color: #555;">
+            
+            <h4>Modo de Importação:</h4>
+            <ul>
+                <li><strong>Para uma Turma Específica:</strong><br>
+                    Selecione uma turma no menu ao lado.</li>
+                <li><strong>Para Múltiplas Turmas (em Lote):</strong><br>
+                    Deixe o menu ao lado em "--- Selecione ---" e adicione uma coluna <code>identificador_turma</code> ao seu arquivo.</li>
+            </ul>
+
+            <strong>Exemplo (Modo em Lote):</strong>
+            <img src="{% static 'admin_panel/images/exemplo-importacao.png' %}" alt="Exemplo de planilha Excel com colunas nome_completo e identificador_turma">
         </div>
 
     </div> </div>

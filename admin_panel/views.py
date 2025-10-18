@@ -48,11 +48,15 @@ def importar_alunos_view(request):
     if request.method == 'POST': # Verifica se o método é POST
         turma_id = request.POST.get('turma_id') # Obtém a turma selecionada
         uploaded_file = request.FILES.get('arquivo_alunos')  # Obtém o arquivo enviado
-        if not turma_id or not uploaded_file:
-            messages.error(request, "Por favor, selecione uma turma e envie um arquivo.")
+
+        if not turma_id:
+            messages.error(request, "Por favor, selecione um modo de importação (Lote ou Turma Específica).")
             return redirect('admin_panel:importar_alunos') # Redireciona de volta à página de importação
+        if not uploaded_file:
+            messages.error(request, "Nenhum arquivo foi enviado.")
+            return redirect('admin_panel:importar_alunos')
         try:
-            turma = Turma.objects.get(id=turma_id) # Obtém a turma selecionada
+
             df = handle_uploaded_file(uploaded_file) # Processa o arquivo
             # Verifica se a coluna 'nome_completo' existe
             if 'nome_completo' not in df.columns:
@@ -60,31 +64,66 @@ def importar_alunos_view(request):
                 messages.error(request, f"O arquivo deve conter uma coluna 'nome_completo'. {colunas_encontradas} foram encontradas.")
                 return redirect('admin_panel:importar_alunos')
             # Processamento de dados.
-            alunos_criados = 0 # Contador de alunos criados
-            alunos_atualizados = 0 # Contador de alunos atualizados
+            if turma_id == 'lote':
+                if 'identificador_turma' not in df.columns:
+                    colunas = list(df.columns)
+                    messages.error(request, f"Para importação em lote, o arquivo deve conter a coluna 'identificador_turma'. {colunas} foram encontradas.")
+                    return redirect('admin_panel:importar_alunos')
+                # Importação em lote para múltiplas turmas
+                turmas_map = {t.identificador_turma: t for t in Turma.objects.all()} # Mapeia identificadores para objetos Turma
+                alunos_criados = 0 # Contador de alunos criados
+                alunos_atualizados = 0 # Contador de alunos atualizados
+                erros_turma_nao_encontrada = set() # Armazena identificadores de turmas não encontradas
 
-            for index, row in df.iterrows(): # Itera sobre cada linha do DataFrame
-                nome = row['nome_completo'] # Obtém o nome completo
-                matricula = row.get('matricula') # Obtém a matrícula, se existir
-                aluno, criado = Aluno.objects.update_or_create( # Atualiza ou cria o aluno
-                    nome_completo=nome,
-                    turma=turma,
-                    defaults={'matricula':matricula}
+                for index, row in df.iterrows():
+                    id_turma_csv = str(row['identificador_turma'])
+                    turma = turmas_map.get(id_turma_csv)
+
+                    if turma:
+                        aluno, criado = Aluno.objects.update_or_create(
+                            nome_completo=row['nome_completo'],
+                            turma=turma,
+                            defaults={'matricula': row.get('matricula')}
+                            )
+                        if criado:
+                            alunos_criados += 1
+                        else:
+                            alunos_atualizados += 1
+                    else:
+                        erros_turma_nao_encontrada.add(id_turma_csv)
+                        
+                    messages.success(request, 
+                    f"Importação EM LOTE concluída. "
+                    f"Criados: {alunos_criados} | Atualizados: {alunos_atualizados}."
                 )
-                if criado: # Se o aluno foi criado
-                    alunos_criados += 1
-                else: # Se o aluno foi atualizado
-                    alunos_atualizados += 1
+                    if erros_turma_nao_encontrada:
+                        mensagens_erro = ", ".join(erros_turma_nao_encontrada)
+                        messages.warning(request, f"As seguintes turmas não foram encontradas: {mensagens_erro}.")
+            else:
+                # O 'try/except' externo vai pegar Turma.DoesNotExist se o ID for inválido
+                turma = Turma.objects.get(id=turma_id)
+                alunos_criados = 0
+                alunos_atualizados = 0
 
-            # Mensagem de sucesso
-            messages.success(request, 
-                f"Importação concluída para a Turma '{turma.nome} ({turma.identificador_turma})'. "
-                f"Criados: {alunos_criados} | Atualizados: {alunos_atualizados}."
-            )
+                for index, row in df.iterrows():
+                    aluno, criado = Aluno.objects.update_or_create(
+                        nome_completo=row['nome_completo'],
+                        turma=turma,
+                        defaults={'matricula': row.get('matricula')}
+                    )
+                    if criado:
+                        alunos_criados += 1
+                    else:
+                        alunos_atualizados += 1
+                
+                messages.success(request, 
+                    f"Importação concluída para a Turma '{turma.nome}'. "
+                    f"Criados: {alunos_criados} | Atualizados: {alunos_atualizados}."
+                )
         except Turma.DoesNotExist: 
             messages.error(request, "Turma selecionada não existe.")
         except ValueError as ve:
-            messages.error(request, str(ve))
+            messages.error(request, "O ID da turma selecionado é inválido.")
         except Exception as e:
             messages.error(request, f"Ocorreu um erro durante a importação: {str(e)}")
         return redirect('admin_panel:importar_alunos') # Redireciona de volta à página de importação
