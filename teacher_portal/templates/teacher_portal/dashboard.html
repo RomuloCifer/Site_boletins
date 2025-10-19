@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard do Professor</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .header { background: #333; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .header a { color: #fff; text-decoration: none; background: #c00; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; }
+        .container { max-width: 900px; margin: 2rem auto; padding: 2rem; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .turma-list { list-style: none; padding: 0; }
+        .turma-list li { margin-bottom: 1rem; }
+        .turma-list a { display: block; padding: 1.5rem; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #337ab7; font-size: 1.2rem; font-weight: bold; }
+        .turma-list a:hover { background: #f0f0f0; border-color: #ccc; }
+        .no-turmas { color: #777; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Olá, {{ request.user.get_full_name|default:request.user.username }}</h1>
+        <a href="{% url 'teacher_portal:logout' %}">Sair &rarr;</a>
+    </div>
+
+    <div class="container">
+        <h2>Minhas Turmas</h2>
+        
+        <ul class="turma-list">
+            {% for turma in turmas %}
+                <li>
+                    <a href="#">
+                        {{ turma.nome }} ({{ turma.identificador_turma }})
+                    </a>
+                </li>
+            {% empty %}
+                <p class="no-turmas">Você ainda não foi associado a nenhuma turma.</p>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
+</html>
