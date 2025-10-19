@@ -33,4 +33,9 @@ urlpatterns = [
         views.dashboard_view, #  a chamada para a view
         name='dashboard'      
     ),
+    path(
+        'turma/<int:turma_id>/',  # 
+        views.lancamento_notas_view, # 
+        name='lancamento_notas'
+    ),
 ]
