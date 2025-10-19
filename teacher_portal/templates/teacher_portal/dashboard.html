@@ -52,7 +52,7 @@
         <ul class="turma-list">
             {% for turma in turmas %}
                 <li>
-                <a href="{% url 'teacher_portal:lancamento_notas' turma.id %}">
+                <a href="{% url 'teacher_portal:lancamento_notas' turma.pk %}">
                     {{ turma.nome }} ({{ turma.identificador_turma }})
                 </a>
             </li>

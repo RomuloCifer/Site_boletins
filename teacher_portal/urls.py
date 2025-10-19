@@ -38,4 +38,9 @@ urlpatterns = [
         views.lancamento_notas_view, # 
         name='lancamento_notas'
     ),
+    path(
+        'turma/<int:turma_id>/aluno/<int:aluno_id>/',
+        views.lancamento_notas_aluno_view, #
+        name='lancamento_notas_aluno'
+    ),
 ]

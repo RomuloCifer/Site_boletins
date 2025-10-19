@@ -3,51 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alunos - {{ turma.nome }}</title>
+    <title>Turma: {{ turma.nome }}</title>
     <style>
         body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
         .header { background: #333; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 1.5rem; }
-        .header-nav { display: flex; gap: 1rem; }
-        .nav-link { color: #fff; text-decoration: none; background: #555; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; }
-        .nav-link.logout { background: #c00; }
-        .logout-form { margin: 0; }
-        .logout-button { background: none; border: none; color: white; font-family: sans-serif; font-size: 1rem; cursor: pointer; padding: 0; }
-
+        .header a { color: #fff; text-decoration: none; background: #555; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; }
+        
         .container { max-width: 900px; margin: 2rem auto; padding: 2rem; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-        /* Lista de Alunos (substitui a tabela) */
+        
         .aluno-list { list-style: none; padding: 0; }
-        .aluno-list li { margin-bottom: 1rem; }
-        .aluno-list a { display: block; padding: 1.5rem; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #337ab7; font-size: 1.2rem; font-weight: bold; }
-        .aluno-list a:hover { background: #f0f0f0; border-color: #ccc; }
+        .aluno-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
+        .aluno-item a { text-decoration: none; color: #337ab7; font-size: 1.2rem; font-weight: bold; }
+        .aluno-item a:hover { color: #23527c; }
+
+        /* Nossos novos estilos de status baseados em porcentagem */
+        .status-badge { font-size: 1rem; font-weight: bold; padding: 0.4rem 0.8rem; border-radius: 4px; color: white; min-width: 50px; text-align: center;}
+        .status-red { background-color: #d9534f; }
+        .status-orange { background-color: #f0ad4e; }
+        .status-green { background-color: #5cb85c; }
+        .no-alunos { color: #777; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="header">
+        <a href="{% url 'teacher_portal:dashboard' %}" class="header-link">&larr; Meu Dashboard</a>
         <h1>Turma: {{ turma.nome }}</h1>
-        <div class="header-nav">
-            <a href="{% url 'teacher_portal:dashboard' %}" class="nav-link">&larr; Voltar ao Dashboard</a>
-            <form method="POST" action="{% url 'teacher_portal:logout' %}" class="logout-form">
-                {% csrf_token %}
-                <button type="submit" class="nav-link logout">Sair &rarr;</button>
-            </form>
-        </div>
     </div>
 
     <div class="container">
-        <h2>Selecione um Aluno para Lançar as Notas</h2>
-
+        <h2>Alunos da Turma</h2>
+        
         <ul class="aluno-list">
-            {% for aluno in alunos %}
-                <li>
-                    <a href="#"> 
-                        {{ aluno.nome_completo }}
+            {% for aluno_info in alunos_com_progresso %}
+                <li class="aluno-item">
+                    <a href="{% url 'teacher_portal:lancamento_notas_aluno' turma_id=turma.pk aluno_id=aluno_info.aluno.pk %}">
+                        {{ aluno_info.aluno.nome_completo }}
                     </a>
+                    
+                    <span class="status-badge 
+                           {% if aluno_info.progresso == 100 %}
+                               status-green
+                           {% elif aluno_info.progresso >= 50 %}
+                               status-orange
+                           {% else %}
+                               status-red
+                           {% endif %}
+                          ">
+                        {{ aluno_info.progresso }}%
+                    </span>
                 </li>
             {% empty %}
-                <p>Nenhum aluno foi importado para esta turma ainda.</p>
+                <p class="no-alunos">Nenhum aluno foi importado para esta turma ainda.</p>
             {% endfor %}
         </ul>
     </div>
