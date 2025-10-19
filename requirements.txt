@@ -1,0 +1,35 @@
+# Django Framework
+Django==5.2.7
+
+# Manipulação de dados (para importação de CSV/Excel no admin_panel)
+pandas==2.3.3
+
+# Leitura de arquivos Excel (dependência do pandas para .xlsx)
+openpyxl==3.1.5
+
+# Servidor de desenvolvimento ASGI (opcional, mas recomendado)
+daphne==4.1.2
+
+# Manipulação de arquivos de imagem (caso precise no futuro)
+Pillow==11.0.0
+
+# Variáveis de ambiente (boa prática para configurações)
+python-decouple==3.8
+
+# Timezone support (útil para projetos Django)
+pytz==2024.2
+
+# Banco de dados PostgreSQL (caso queira migrar do SQLite)
+# psycopg2-binary==2.9.9
+
+# Servidor de produção WSGI (para deploy)
+# gunicorn==23.0.0
+
+# Ferramentas de desenvolvimento (descomente se precisar)
+# django-debug-toolbar==4.4.6
+# django-extensions==3.2.3
+
+# Testes e qualidade de código (descomente se precisar)
+# pytest==8.3.3
+# pytest-django==4.9.0
+# flake8==7.1.1
