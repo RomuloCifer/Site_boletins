@@ -17,6 +17,14 @@
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 0.5rem; font-size: 1.1rem; }
         .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        
+        .nota-numerica { 
+            background-color: #f8f9fa; 
+        }
+        .nota-conceitual { 
+            background-color: #e7f3ff; 
+        }
 
         .button-row { display: flex; gap: 1rem; margin-top: 2rem; }
         .button { padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; text-decoration: none; }
@@ -25,11 +33,45 @@
         .button-secondary { background: #6c757d; color: white; }
         .button-secondary:hover { background: #5a6268; }
     </style>
+    <script>
+        // Validação adicional para campos numéricos
+        document.addEventListener('DOMContentLoaded', function() {
+            const camposNumericos = document.querySelectorAll('.nota-numerica');
+            
+            camposNumericos.forEach(function(campo) {
+                campo.addEventListener('input', function() {
+                    let valor = parseInt(this.value);
+                    
+                    // Remove caracteres não numéricos
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    
+                    // Valida se está no range 0-100
+                    if (valor < 0) {
+                        this.value = '0';
+                    } else if (valor > 100) {
+                        this.value = '100';
+                    }
+                });
+                
+                // Adiciona validação visual
+                campo.addEventListener('blur', function() {
+                    let valor = parseInt(this.value);
+                    if (this.value !== '' && (isNaN(valor) || valor < 0 || valor > 100)) {
+                        this.style.borderColor = '#d9534f';
+                        this.style.backgroundColor = '#f2dede';
+                    } else {
+                        this.style.borderColor = '#ccc';
+                        this.style.backgroundColor = '#f8f9fa';
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 <body>
 
     <div class="header">
-        <a href="{% url 'teacher_portal:lancamento_notas' turma.id %}" class="nav-link">&larr; Voltar para a Turma</a>
+        <a href="{% url 'teacher_portal:lancamento_notas' turma.pk %}" class="nav-link">&larr; Voltar para a Turma</a>
         <h1>Lançando Notas</h1>
     </div>
 
@@ -41,15 +83,41 @@
 
             {% for item in competencias_com_notas %}
                 <div class="form-group">
-                    <label for="nota-{{ item.competencia.id }}">{{ item.competencia.nome }}</label>
+                    <label for="nota-{{ item.competencia.pk }}">
+                        {{ item.competencia.nome }} 
+                        <small>({{ item.competencia.get_tipo_nota_display }})</small>
+                    </label>
                     
-                    <input type="text" 
-                           name="nota-{{ item.competencia.id }}" 
-                           id="nota-{{ item.competencia.id }}"
-                           
-                           value="{{ item.nota_valor }}" 
-                           
-                           placeholder="Digite a nota (Ex: {{ item.competencia.get_tipo_nota_display }})">
+                    {% if item.competencia.tipo_nota == 'NUM' %}
+                        <!-- Campo numérico para notas de 0-100 -->
+                        <input type="number" 
+                               name="nota-{{ item.competencia.pk }}" 
+                               id="nota-{{ item.competencia.pk }}"
+                               class="nota-numerica"
+                               min="0" 
+                               max="100" 
+                               step="1"
+                               value="{{ item.nota_valor }}" 
+                               placeholder="Digite uma nota de 0 a 100">
+                    {% elif item.competencia.tipo_nota == 'ABC' %}
+                        <!-- Campo select para notas conceituais A, B, C, D -->
+                        <select name="nota-{{ item.competencia.pk }}" 
+                                id="nota-{{ item.competencia.pk }}"
+                                class="nota-conceitual">
+                            <option value="">-- Selecione um conceito --</option>
+                            <option value="A" {% if item.nota_valor == 'A' %}selected{% endif %}>A - Excelente</option>
+                            <option value="B" {% if item.nota_valor == 'B' %}selected{% endif %}>B - Bom</option>
+                            <option value="C" {% if item.nota_valor == 'C' %}selected{% endif %}>C - Regular</option>
+                            <option value="D" {% if item.nota_valor == 'D' %}selected{% endif %}>D - Insuficiente</option>
+                        </select>
+                    {% else %}
+                        <!-- Fallback para outros tipos (caso existam no futuro) -->
+                        <input type="text" 
+                               name="nota-{{ item.competencia.pk }}" 
+                               id="nota-{{ item.competencia.pk }}"
+                               value="{{ item.nota_valor }}" 
+                               placeholder="Digite a nota">
+                    {% endif %}
                 </div>
             {% endfor %}
 
