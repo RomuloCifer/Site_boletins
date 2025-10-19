@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Administrativo - Sistema de Notas</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0; 
+            padding: 0; 
+            min-height: 100vh;
+        }
+        
+        .header { 
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white; 
+            padding: 2rem; 
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 { 
+            margin: 0; 
+            font-size: 2.5rem; 
+            font-weight: 300;
+            text-align: center;
+        }
+        
+        .header p {
+            text-align: center;
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 2rem auto; 
+            padding: 0 2rem;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+            margin: 0.5rem 0 0 0;
+        }
+        
+        .turmas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+        
+        .turma-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .turma-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .turma-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .turma-nome {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+        
+        .turma-id {
+            color: #666;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+        }
+        
+        .progress-section {
+            margin: 1.5rem 0;
+        }
+        
+        .progress-bar-container {
+            background: #f0f0f0;
+            border-radius: 25px;
+            height: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            border-radius: 25px;
+            transition: width 0.8s ease;
+        }
+        
+        .progress-green { background: linear-gradient(90deg, #4CAF50, #45a049); }
+        .progress-yellow { background: linear-gradient(90deg, #FF9800, #f57c00); }
+        .progress-red { background: linear-gradient(90deg, #f44336, #d32f2f); }
+        
+        .progress-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0.5rem 0;
+        }
+        
+        .turma-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .detail-item {
+            text-align: center;
+            padding: 0.8rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .detail-number {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        
+        .detail-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0.2rem 0 0 0;
+        }
+        
+        .professor-info {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .professor-info strong {
+            font-size: 1.1rem;
+        }
+        
+        .action-buttons {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        
+        .no-turmas {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin: 3rem 0;
+            background: rgba(255,255,255,0.1);
+            padding: 3rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        @media (max-width: 768px) {
+            .turmas-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .turma-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🎓 Dashboard Administrativo</h1>
+        <p>Visão geral do progresso de todas as turmas</p>
+    </div>
+
+    <div class="container">
+        <!-- Estatísticas Gerais -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_turmas }}</div>
+                <div class="stat-label">Total de Turmas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_alunos_geral }}</div>
+                <div class="stat-label">Total de Alunos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_notas_lancadas_geral }}</div>
+                <div class="stat-label">Notas Lançadas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">
+                    {% if total_notas_possiveis_geral > 0 %}
+                        {{ total_notas_lancadas_geral|floatformat:0 }}/{{ total_notas_possiveis_geral }}
+                    {% else %}
+                        0/0
+                    {% endif %}
+                </div>
+                <div class="stat-label">Progresso Geral</div>
+            </div>
+        </div>
+
+        <!-- Grid de Turmas -->
+        <div class="turmas-grid">
+            {% for turma_info in turmas_com_progresso %}
+                <div class="turma-card">
+                    <div class="turma-header">
+                        <h3 class="turma-nome">{{ turma_info.turma.nome }}</h3>
+                        <span class="turma-id">{{ turma_info.turma.identificador_turma }}</span>
+                    </div>
+                    
+                    <div class="progress-section">
+                        <div class="progress-text 
+                            {% if turma_info.progresso_turma >= 80 %}progress-green
+                            {% elif turma_info.progresso_turma >= 50 %}progress-yellow
+                            {% else %}progress-red{% endif %}">
+                            {{ turma_info.progresso_turma }}%
+                        </div>
+                        
+                        <div class="progress-bar-container">
+                            <div class="progress-bar 
+                                {% if turma_info.progresso_turma >= 80 %}progress-green
+                                {% elif turma_info.progresso_turma >= 50 %}progress-yellow
+                                {% else %}progress-red{% endif %}"
+                                style="width: {{ turma_info.progresso_turma }}%;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="turma-details">
+                        <div class="detail-item">
+                            <div class="detail-number">{{ turma_info.total_alunos }}</div>
+                            <div class="detail-label">Alunos</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-number">{{ turma_info.total_competencias }}</div>
+                            <div class="detail-label">Competências</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-number">{{ turma_info.notas_lancadas }}</div>
+                            <div class="detail-label">Notas Lançadas</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-number">{{ turma_info.total_notas_possiveis }}</div>
+                            <div class="detail-label">Total Possível</div>
+                        </div>
+                    </div>
+                    
+                    <div class="professor-info">
+                        <strong>Professor:</strong> {{ turma_info.professor_nome }}
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <a href="{% url 'admin_panel:detalhes_turma' turma_info.turma.pk %}" class="btn btn-primary">📊 Ver Detalhes</a>
+                        <a href="#" class="btn btn-secondary">📄 Gerar PDF</a>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="no-turmas">
+                    <h3>📚 Nenhuma turma cadastrada</h3>
+                    <p>Cadastre turmas no painel administrativo do Django para começar.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>

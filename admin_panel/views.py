@@ -2,9 +2,120 @@ import pandas as pd # Para processar arquivos CSV/Excel
 from django.shortcuts import render, redirect
 from django.contrib.admin.views.decorators import staff_member_required # Garante que apenas administradores acessem
 from django.contrib import messages
-from core.models import Turma, Aluno
+from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota
 import io
 # Create your views here.
+
+@staff_member_required
+def dashboard_admin_view(request):
+    """Dashboard administrativo com visão geral de todas as turmas e progresso."""
+    
+    # Busca todas as turmas
+    turmas = Turma.objects.all().order_by('nome')
+    
+    turmas_com_progresso = []
+    for turma in turmas:
+        # Busca alunos da turma
+        alunos_da_turma = Aluno.objects.filter(turma=turma)
+        total_alunos = alunos_da_turma.count()
+        
+        # Busca competências da turma
+        competencias_da_turma = turma.competencias.all()
+        total_competencias = competencias_da_turma.count()
+        
+        # Calcula o total de notas possíveis (alunos × competências)
+        total_notas_possiveis = total_alunos * total_competencias
+        
+        # Conta quantas notas já foram lançadas
+        notas_lancadas = LancamentoDeNota.objects.filter(
+            aluno__turma=turma,
+            competencia__in=competencias_da_turma
+        ).count()
+        
+        # Calcula a porcentagem geral da turma
+        if total_notas_possiveis > 0:
+            progresso_turma = int((notas_lancadas / total_notas_possiveis) * 100)
+        else:
+            progresso_turma = 0
+        
+        # Informações do professor responsável
+        professor_nome = turma.professor_responsavel.user.get_full_name() if turma.professor_responsavel else "Não atribuído"
+        
+        turmas_com_progresso.append({
+            'turma': turma,
+            'total_alunos': total_alunos,
+            'total_competencias': total_competencias,
+            'notas_lancadas': notas_lancadas,
+            'total_notas_possiveis': total_notas_possiveis,
+            'progresso_turma': progresso_turma,
+            'professor_nome': professor_nome,
+        })
+    
+    context = {
+        'turmas_com_progresso': turmas_com_progresso,
+        'total_turmas': turmas.count(),
+        'total_alunos_geral': sum(t['total_alunos'] for t in turmas_com_progresso),
+        'total_notas_lancadas_geral': sum(t['notas_lancadas'] for t in turmas_com_progresso),
+        'total_notas_possiveis_geral': sum(t['total_notas_possiveis'] for t in turmas_com_progresso),
+    }
+    
+    return render(request, 'admin_panel/dashboard_admin.html', context)
+
+@staff_member_required
+def detalhes_turma_view(request, turma_id):
+    """Exibe detalhes específicos de uma turma para coordenação."""
+    try:
+        turma = Turma.objects.get(pk=turma_id)
+    except Turma.DoesNotExist:
+        messages.error(request, "Turma não encontrada.")
+        return redirect('admin_panel:dashboard')
+    
+    # Busca alunos da turma
+    alunos_da_turma = Aluno.objects.filter(turma=turma).order_by('nome_completo')
+    
+    # Busca competências da turma
+    competencias_da_turma = turma.competencias.all()
+    
+    # Calcula progresso detalhado de cada aluno
+    alunos_com_progresso_detalhado = []
+    for aluno in alunos_da_turma:
+        notas_aluno = LancamentoDeNota.objects.filter(
+            aluno=aluno,
+            competencia__in=competencias_da_turma
+        )
+        
+        # Cria lista de notas na ordem das competências
+        notas_ordenadas = []
+        for competencia in competencias_da_turma:
+            nota = notas_aluno.filter(competencia=competencia).first()
+            notas_ordenadas.append({
+                'competencia': competencia,
+                'nota_valor': nota.nota_valor if nota else None,
+                'tem_nota': nota is not None
+            })
+        
+        # Calcula progresso individual
+        total_competencias = competencias_da_turma.count()
+        notas_lancadas = notas_aluno.count()
+        progresso_individual = int((notas_lancadas / total_competencias) * 100) if total_competencias > 0 else 0
+        
+        alunos_com_progresso_detalhado.append({
+            'aluno': aluno,
+            'notas_ordenadas': notas_ordenadas,
+            'progresso_individual': progresso_individual,
+            'notas_lancadas': notas_lancadas,
+            'total_competencias': total_competencias,
+        })
+    
+    context = {
+        'turma': turma,
+        'competencias_da_turma': competencias_da_turma,
+        'alunos_com_progresso_detalhado': alunos_com_progresso_detalhado,
+        'total_alunos': alunos_da_turma.count(),
+        'total_competencias': competencias_da_turma.count(),
+    }
+    
+    return render(request, 'admin_panel/detalhes_turma.html', context)
 
 
 def handle_uploaded_file(uploaded_file):

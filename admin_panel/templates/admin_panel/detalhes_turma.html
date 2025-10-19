@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes: {{ turma.nome }} - Sistema de Notas</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0; 
+            padding: 0; 
+            min-height: 100vh;
+        }
+        
+        .header { 
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white; 
+            padding: 2rem; 
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 { 
+            margin: 0; 
+            font-size: 2rem; 
+            font-weight: 300;
+        }
+        
+        .back-link {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .container { 
+            max-width: 1400px; 
+            margin: 2rem auto; 
+            padding: 0 2rem;
+        }
+        
+        .turma-info {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .turma-title {
+            font-size: 2rem;
+            color: #333;
+            margin: 0 0 1rem 0;
+            font-weight: bold;
+        }
+        
+        .turma-meta {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .meta-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .meta-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        
+        .meta-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0.3rem 0 0 0;
+        }
+        
+        .notas-table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: #333;
+            margin: 0 0 1.5rem 0;
+            font-weight: bold;
+        }
+        
+        .notas-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .notas-table th,
+        .notas-table td {
+            padding: 1rem 0.8rem;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .notas-table th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .notas-table th:first-child {
+            text-align: left;
+            border-radius: 10px 0 0 0;
+        }
+        
+        .notas-table th:last-child {
+            border-radius: 0 10px 0 0;
+        }
+        
+        .aluno-nome {
+            text-align: left !important;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .nota-cell {
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        
+        .nota-numerica {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        
+        .nota-conceitual {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .nota-vazia {
+            background: #ffebee;
+            color: #c62828;
+            font-style: italic;
+        }
+        
+        .progresso-aluno {
+            width: 60px;
+            font-weight: bold;
+            padding: 0.5rem;
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .progresso-green { background: linear-gradient(135deg, #4CAF50, #45a049); }
+        .progresso-yellow { background: linear-gradient(135deg, #FF9800, #f57c00); }
+        .progresso-red { background: linear-gradient(135deg, #f44336, #d32f2f); }
+        
+        .actions-section {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            padding: 3rem;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .turma-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .actions-section {
+                flex-direction: column;
+            }
+            
+            .notas-table {
+                font-size: 0.9rem;
+            }
+            
+            .notas-table th,
+            .notas-table td {
+                padding: 0.5rem 0.3rem;
+            }
+        }
+        
+        /* Scroll suave para tabela */
+        .notas-table-container {
+            scroll-behavior: smooth;
+        }
+        
+        /* Efeito hover nas linhas da tabela */
+        .notas-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>📋 {{ turma.nome }}</h1>
+        <a href="{% url 'admin_panel:dashboard' %}" class="back-link">← Voltar ao Dashboard</a>
+    </div>
+
+    <div class="container">
+        <!-- Informações da Turma -->
+        <div class="turma-info">
+            <h2 class="turma-title">{{ turma.nome }} - {{ turma.identificador_turma }}</h2>
+            
+            {% if turma.professor_responsavel %}
+                <p><strong>Professor Responsável:</strong> {{ turma.professor_responsavel.user.get_full_name }}</p>
+            {% else %}
+                <p><strong>Professor Responsável:</strong> <em>Não atribuído</em></p>
+            {% endif %}
+            
+            <div class="turma-meta">
+                <div class="meta-item">
+                    <div class="meta-number">{{ total_alunos }}</div>
+                    <div class="meta-label">Total de Alunos</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-number">{{ total_competencias }}</div>
+                    <div class="meta-label">Competências</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-number">
+                        {% with total_notas=0 total_possiveis=0 %}
+                            {% for aluno_info in alunos_com_progresso_detalhado %}
+                                {% with total_notas=total_notas|add:aluno_info.notas_lancadas total_possiveis=total_possiveis|add:aluno_info.total_competencias %}{% endwith %}
+                            {% endfor %}
+                            {% for aluno_info in alunos_com_progresso_detalhado %}
+                                {% if forloop.last %}
+                                    {% with soma_notas=0 soma_possiveis=0 %}
+                                        {% for a in alunos_com_progresso_detalhado %}
+                                            {% with soma_notas=soma_notas|add:a.notas_lancadas soma_possiveis=soma_possiveis|add:a.total_competencias %}{% endwith %}
+                                        {% endfor %}
+                                        {{ soma_notas }}/{{ soma_possiveis }}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="meta-label">Notas Lançadas</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-number">
+                        {% with total_notas=0 total_possiveis=0 %}
+                            {% for aluno_info in alunos_com_progresso_detalhado %}
+                                {% with total_notas=total_notas|add:aluno_info.notas_lancadas total_possiveis=total_possiveis|add:aluno_info.total_competencias %}{% endwith %}
+                            {% endfor %}
+                            {% for aluno_info in alunos_com_progresso_detalhado %}
+                                {% if forloop.last %}
+                                    {% with soma_notas=0 soma_possiveis=0 %}
+                                        {% for a in alunos_com_progresso_detalhado %}
+                                            {% with soma_notas=soma_notas|add:a.notas_lancadas soma_possiveis=soma_possiveis|add:a.total_competencias %}{% endwith %}
+                                        {% endfor %}
+                                        {% if soma_possiveis > 0 %}
+                                            {% widthratio soma_notas soma_possiveis 100 %}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+                    </div>
+                    <div class="meta-label">Progresso Geral</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Notas -->
+        {% if alunos_com_progresso_detalhado %}
+            <div class="notas-table-container">
+                <h3 class="section-title">📊 Notas por Aluno e Competência</h3>
+                
+                <table class="notas-table">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            {% for competencia in competencias_da_turma %}
+                                <th>{{ competencia.nome }}</th>
+                            {% endfor %}
+                            <th>Progresso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for aluno_info in alunos_com_progresso_detalhado %}
+                            <tr>
+                                <td class="aluno-nome">{{ aluno_info.aluno.nome_completo }}</td>
+                                {% for nota_info in aluno_info.notas_ordenadas %}
+                                    <td class="nota-cell 
+                                        {% if nota_info.tem_nota %}
+                                            {% if nota_info.competencia.tipo_nota == 'NUM' %}nota-numerica{% else %}nota-conceitual{% endif %}
+                                        {% else %}
+                                            nota-vazia
+                                        {% endif %}">
+                                        {% if nota_info.tem_nota %}
+                                            {{ nota_info.nota_valor }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                                <td>
+                                    <span class="progresso-aluno 
+                                        {% if aluno_info.progresso_individual >= 80 %}progresso-green
+                                        {% elif aluno_info.progresso_individual >= 50 %}progresso-yellow
+                                        {% else %}progresso-red{% endif %}">
+                                        {{ aluno_info.progresso_individual }}%
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>📚 Nenhum aluno cadastrado</h3>
+                <p>Esta turma ainda não possui alunos importados.</p>
+            </div>
+        {% endif %}
+
+        <!-- Ações -->
+        <div class="actions-section">
+            <a href="{% url 'admin_panel:importar_alunos' %}" class="btn btn-primary">
+                👥 Importar Alunos
+            </a>
+            <a href="#" class="btn btn-success">
+                📄 Gerar Relatório PDF
+            </a>
+        </div>
+    </div>
+
+</body>
+</html>

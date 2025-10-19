@@ -7,16 +7,25 @@
     <div class="app-admin_panel module">
         <table>
             <caption>
-                <a href="{% url 'admin_panel:importar_alunos' %}" class="section" 
+                <a href="{% url 'admin_panel:dashboard' %}" class="section" 
                    title="Ferramentas Customizadas">
-                   Ferramentas do Site
+                   Painel de Coordenação
                 </a>
             </caption>
             
             <tr class="model-group">
                 <th scope="row">
+                    <a href="{% url 'admin_panel:dashboard' %}">
+                        📊 Dashboard Administrativo
+                    </a>
+                </th>
+                <td><a href="{% url 'admin_panel:dashboard' %}" class="addlink">Acessar</a></td>
+            </tr>
+            
+            <tr class="model-group">
+                <th scope="row">
                     <a href="{% url 'admin_panel:importar_alunos' %}">
-                        Importar Alunos (CSV/Excel)
+                        📤 Importar Alunos (CSV/Excel)
                     </a>
                 </th>
                 <td><a href="{% url 'admin_panel:importar_alunos' %}" class="addlink">Importar</a></td>
