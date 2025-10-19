@@ -15,14 +15,36 @@
         .turma-list a { display: block; padding: 1.5rem; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #337ab7; font-size: 1.2rem; font-weight: bold; }
         .turma-list a:hover { background: #f0f0f0; border-color: #ccc; }
         .no-turmas { color: #777; font-style: italic; }
+        .logout-form {
+            margin: 0; /* Remove a margem padrão do formulário */
+        }
+        .logout-button {
+            background: #c00;
+            color: #fff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-weight: bold;
+            border: none; /* Remove a borda padrão do botão */
+            cursor: pointer; /* Mostra a "mãozinha" */
+            font-family: sans-serif; /* Garante a mesma fonte */
+            font-size: 1rem; /* Garante o mesmo tamanho */
+        }
+        .logout-button:hover {
+            background: #e00;
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>Olá, {{ request.user.get_full_name|default:request.user.username }}</h1>
-        <a href="{% url 'teacher_portal:logout' %}">Sair &rarr;</a>
-    </div>
+            <h1>Olá, {{ request.user.get_full_name|default:request.user.username }}</h1>
+            
+            <form method="POST" action="{% url 'teacher_portal:logout' %}" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="logout-button">Sair &rarr;</button>
+            </form>
+            </div>
 
     <div class="container">
         <h2>Minhas Turmas</h2>

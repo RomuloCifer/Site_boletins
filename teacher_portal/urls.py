@@ -1,5 +1,9 @@
+# Em teacher_portal/urls.py
+
 from django.urls import path
-from django.contrib.auth import views as auth_views # Importamos as views prontas do Django
+from django.contrib.auth import views as auth_views 
+# --- ADIÇÃO IMPORTANTE ---
+from . import views  # Importa o arquivo views.py que acabamos de preencher
 
 app_name = 'teacher_portal'
 
@@ -8,9 +12,7 @@ urlpatterns = [
     path(
         'login/', 
         auth_views.LoginView.as_view(
-            # Dizemos ao Django para usar nosso template customizado
             template_name='teacher_portal/login.html',
-            # Após o login, para onde o usuário deve ir?
             redirect_authenticated_user=True 
         ),
         name='login'
@@ -19,9 +21,16 @@ urlpatterns = [
     # --- PÁGINA DE LOGOUT ---
     path(
         'logout/',
-        auth_views.LogoutView.as_view(),
+        auth_views.LogoutView.as_view(
+            next_page='teacher_portal:login' # Redireciona para a página de login após o logout
+        ),
         name='logout'
     ),
     
-    # Vamos adicionar o Dashboard (Pilar 3) aqui em breve
+    # --- PÁGINA DO DASHBOARD ---
+    path(
+        'dashboard/',
+        views.dashboard_view, #  a chamada para a view
+        name='dashboard'      
+    ),
 ]
