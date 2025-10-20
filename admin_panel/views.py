@@ -39,7 +39,11 @@ def dashboard_admin_view(request):
             progresso_turma = 0
         
         # Informações do professor responsável
-        professor_nome = turma.professor_responsavel.user.get_full_name() if turma.professor_responsavel else "Não atribuído"
+        if turma.professor_responsavel:
+            nome_completo = turma.professor_responsavel.user.get_full_name()
+            professor_nome = nome_completo if nome_completo.strip() else turma.professor_responsavel.user.username
+        else:
+            professor_nome = "Não atribuído"
         
         turmas_com_progresso.append({
             'turma': turma,

@@ -310,7 +310,7 @@
                                 {% if turma_info.progresso_turma >= 80 %}progress-green
                                 {% elif turma_info.progresso_turma >= 50 %}progress-yellow
                                 {% else %}progress-red{% endif %}"
-                                style="width: {{ turma_info.progresso_turma }}%;">
+                                data-progress="{{ turma_info.progresso_turma }}">
                             </div>
                         </div>
                     </div>
@@ -335,7 +335,12 @@
                     </div>
                     
                     <div class="professor-info">
-                        <strong>Professor:</strong> {{ turma_info.professor_nome }}
+                        <strong>Professor:</strong> 
+                        {% if turma_info.professor_nome and turma_info.professor_nome != "Não atribuído" %}
+                            {{ turma_info.professor_nome }}
+                        {% else %}
+                            <em style="color: #ffcccb;">Não atribuído</em>
+                        {% endif %}
                     </div>
                     
                     <div class="action-buttons">
@@ -351,6 +356,17 @@
             {% endfor %}
         </div>
     </div>
+
+    <script>
+        // Define a largura das barras de progresso
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBars = document.querySelectorAll('.progress-bar');
+            progressBars.forEach(function(bar) {
+                const progress = bar.getAttribute('data-progress');
+                bar.style.width = progress + '%';
+            });
+        });
+    </script>
 
 </body>
 </html>
