@@ -2,7 +2,7 @@ from django.contrib import admin # type: ignore
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin #type: ignore
 from django.contrib.auth.models import User # type: ignore
 
-from .models import Professor, Turma, Aluno, Competencia, LancamentoDeNota
+from .models import Professor, Turma, Aluno, Competencia, LancamentoDeNota, TipoTurma
 
 class ProfessorInline(admin.StackedInline): # Inline para o modelo Professor
     model = Professor # Modelo vinculado
@@ -26,13 +26,22 @@ class AlunoInline(admin.TabularInline): # Inline para o modelo Aluno
     model = Aluno # Modelo vinculado
     extra = 0 # Número extra de formulários vazios
 
+@admin.register(TipoTurma)
+class TipoTurmaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'descricao', 'get_total_competencias')
+    search_fields = ('nome', 'descricao')
+    filter_horizontal = ('competencias',)
+    
+    def get_total_competencias(self, obj):
+        return obj.competencias.count()
+    get_total_competencias.short_description = 'Total de Competências'
+
 @admin.register(Turma)
 class TurmaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'identificador_turma', 'professor_responsavel') # Campos exibidos na lista
-    search_fields = ('nome', 'identificador_turma') # Campos pesquisáveis
+    list_display = ('nome', 'tipo_turma', 'identificador_turma', 'professor_responsavel', 'get_total_alunos') # Campos exibidos na lista
+    search_fields = ('tipo_turma__nome', 'identificador_turma') # Campos pesquisáveis
+    list_filter = ('tipo_turma',) # Filtro por tipo de turma
     inlines = [AlunoInline] # Adiciona o inline de Aluno
-
-    filter_horizontal = ('competencias',) # Filtro horizontal para ManyToManyField
 
     def get_total_alunos(self, obj):
         return obj.alunos.count()

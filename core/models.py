@@ -79,11 +79,40 @@ class Competencia(models.Model):
 
 
 
+class TipoTurma(models.Model):
+    """Representa um tipo de turma (Basic 1, Basic 2, HR4, etc.)"""
+    nome = models.CharField(max_length=100, unique=True, help_text="Ex: Basic 1, Basic 2, High Resolution 4")
+    descricao = models.TextField(blank=True, help_text="Descrição do tipo de turma")
+    competencias = models.ManyToManyField(
+        Competencia,
+        related_name="tipos_turma",
+        verbose_name="Competências do Tipo de Turma",
+        help_text="Competências que serão automaticamente associadas às turmas deste tipo"
+    )
+    
+    def __str__(self):
+        return self.nome
+    
+    class Meta:
+        verbose_name_plural = "Tipos de Turma"
+        ordering = ['nome']
+
+
 class Turma(models.Model): # Representa uma turma
 
-    nome = models.CharField(max_length=100)
+    tipo_turma = models.ForeignKey(
+        TipoTurma,
+        on_delete=models.CASCADE,
+        related_name='turmas',
+        verbose_name="Tipo de Turma",
+        null=True,
+        blank=True
+    )
 
-    identificador_turma = models.CharField(max_length=100, help_text="Ex: A2, 2025/1 Tarde, 2a e 4a") # Identificador único da turma
+    identificador_turma = models.CharField(
+        max_length=100, 
+        help_text="Ex: TT18 (Tuesday/Thursday 18h), MW20 (Monday/Wednesday 20h)"
+    ) # Identificador único da turma
 
     professor_responsavel = models.ForeignKey(  # Relaciona a turma a um professor
 
@@ -97,17 +126,21 @@ class Turma(models.Model): # Representa uma turma
 
         related_name='turmas')
 
-    competencias = models.ManyToManyField(
-
-        Competencia,
-
-        related_name="turmas",
-
-        verbose_name="Competências da Turma",
-
-        blank=True # Permite que uma turma seja criada sem nenhuma competência
-
-    )
+    # Removido: competencias ManyToManyField - agora vem do TipoTurma
+    
+    @property
+    def nome(self):
+        """Retorna o nome completo da turma baseado no tipo e identificador"""
+        if self.tipo_turma:
+            return f"{self.tipo_turma.nome} - {self.identificador_turma}"
+        return self.identificador_turma
+    
+    @property
+    def competencias(self):
+        """Retorna as competências do tipo de turma"""
+        if self.tipo_turma:
+            return self.tipo_turma.competencias
+        return None
 
     def __str__(self):
 
@@ -118,9 +151,9 @@ class Turma(models.Model): # Representa uma turma
 
         verbose_name_plural = "Turmas"
 
-        ordering = ['nome'] # Ordena por nome da turma
+        ordering = ['tipo_turma__nome', 'identificador_turma'] # Ordena por tipo de turma e depois identificador
 
-        unique_together = ('nome', 'identificador_turma') # Garante que o nome da turma seja único
+        unique_together = ('tipo_turma', 'identificador_turma') # Garante que o identificador seja único dentro do tipo
 
 
 

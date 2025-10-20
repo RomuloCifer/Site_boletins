@@ -1,8 +1,9 @@
 import pandas as pd # Para processar arquivos CSV/Excel
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required # Garante que apenas administradores acessem
 from django.contrib import messages
-from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota
+from django.http import JsonResponse
+from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota, TipoTurma
 import io
 # Create your views here.
 
@@ -19,9 +20,9 @@ def dashboard_admin_view(request):
         alunos_da_turma = Aluno.objects.filter(turma=turma)
         total_alunos = alunos_da_turma.count()
         
-        # Busca competências da turma
-        competencias_da_turma = turma.competencias.all()
-        total_competencias = competencias_da_turma.count()
+        # Busca competências da turma através do tipo de turma
+        competencias_da_turma = turma.competencias.all() if turma.competencias else []
+        total_competencias = len(competencias_da_turma)
         
         # Calcula o total de notas possíveis (alunos × competências)
         total_notas_possiveis = total_alunos * total_competencias
@@ -77,17 +78,21 @@ def detalhes_turma_view(request, turma_id):
     # Busca alunos da turma
     alunos_da_turma = Aluno.objects.filter(turma=turma).order_by('nome_completo')
     
-    # Busca competências da turma
-    competencias_da_turma = turma.competencias.all()
+    # Busca competências da turma através do tipo de turma
+    competencias_da_turma = turma.competencias.all() if turma.competencias else []
+    total_competencias_turma = len(competencias_da_turma)
     
     # Calcula progresso detalhado de cada aluno
     alunos_com_progresso_detalhado = []
     for aluno in alunos_da_turma:
-        notas_aluno = LancamentoDeNota.objects.filter(
-            aluno=aluno,
-            competencia__in=competencias_da_turma
-        )
-        
+        if competencias_da_turma:
+            notas_aluno = LancamentoDeNota.objects.filter(
+                aluno=aluno,
+                competencia__in=competencias_da_turma
+            )
+        else:
+            notas_aluno = LancamentoDeNota.objects.none()
+            
         # Cria lista de notas na ordem das competências
         notas_ordenadas = []
         for competencia in competencias_da_turma:
@@ -99,16 +104,15 @@ def detalhes_turma_view(request, turma_id):
             })
         
         # Calcula progresso individual
-        total_competencias = competencias_da_turma.count()
         notas_lancadas = notas_aluno.count()
-        progresso_individual = int((notas_lancadas / total_competencias) * 100) if total_competencias > 0 else 0
+        progresso_individual = int((notas_lancadas / total_competencias_turma) * 100) if total_competencias_turma > 0 else 0
         
         alunos_com_progresso_detalhado.append({
             'aluno': aluno,
             'notas_ordenadas': notas_ordenadas,
             'progresso_individual': progresso_individual,
             'notas_lancadas': notas_lancadas,
-            'total_competencias': total_competencias,
+            'total_competencias': total_competencias_turma,
         })
     
     context = {
@@ -116,7 +120,7 @@ def detalhes_turma_view(request, turma_id):
         'competencias_da_turma': competencias_da_turma,
         'alunos_com_progresso_detalhado': alunos_com_progresso_detalhado,
         'total_alunos': alunos_da_turma.count(),
-        'total_competencias': competencias_da_turma.count(),
+        'total_competencias': total_competencias_turma,
     }
     
     return render(request, 'admin_panel/detalhes_turma.html', context)
@@ -249,3 +253,115 @@ def importar_alunos_view(request):
         'title': 'Importar Alunos via CSV/Excel'
     }
     return render(request, 'admin_panel/importar_alunos.html', context) # Renderiza o template
+
+
+@staff_member_required
+def gerenciar_competencias_view(request):
+    """View para gerenciar competências - listar, criar e deletar"""
+    competencias = Competencia.objects.all().order_by('nome')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create':
+            nome = request.POST.get('nome')
+            tipo_nota = request.POST.get('tipo_nota')
+            
+            if nome and tipo_nota:
+                try:
+                    competencia = Competencia.objects.create(
+                        nome=nome,
+                        tipo_nota=tipo_nota
+                    )
+                    messages.success(request, f'Competência "{competencia.nome}" criada com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao criar competência: {str(e)}')
+            else:
+                messages.error(request, 'Nome e tipo de nota são obrigatórios.')
+        
+        elif action == 'delete':
+            competencia_id = request.POST.get('competencia_id')
+            try:
+                competencia = get_object_or_404(Competencia, id=competencia_id)
+                
+                # Verificar se a competência está sendo usada
+                tipos_turma_usando = TipoTurma.objects.filter(competencias=competencia).count()
+                notas_existentes = LancamentoDeNota.objects.filter(competencia=competencia).count()
+                
+                if tipos_turma_usando > 0 or notas_existentes > 0:
+                    messages.warning(
+                        request, 
+                        f'A competência "{competencia.nome}" está sendo usada em {tipos_turma_usando} tipo(s) de turma '
+                        f'e tem {notas_existentes} nota(s) lançada(s). Tem certeza que deseja deletar?'
+                    )
+                else:
+                    nome_competencia = competencia.nome
+                    competencia.delete()
+                    messages.success(request, f'Competência "{nome_competencia}" deletada com sucesso!')
+                    
+            except Exception as e:
+                messages.error(request, f'Erro ao deletar competência: {str(e)}')
+        
+        return redirect('admin_panel:gerenciar_competencias')
+    
+    context = {
+        'competencias': competencias,
+        'tipo_nota_choices': Competencia.TIPO_NOTA_CHOICES,
+        'title': 'Gerenciar Competências'
+    }
+    return render(request, 'admin_panel/gerenciar_competencias.html', context)
+
+
+@staff_member_required
+def deletar_competencia_view(request, competencia_id):
+    """View para confirmar e deletar uma competência"""
+    if request.method == 'POST':
+        try:
+            competencia = get_object_or_404(Competencia, id=competencia_id)
+            nome_competencia = competencia.nome
+            competencia.delete()
+            messages.success(request, f'Competência "{nome_competencia}" deletada com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao deletar competência: {str(e)}')
+    
+    return redirect('admin_panel:gerenciar_competencias')
+
+
+@staff_member_required
+def gerenciar_tipos_turma_view(request):
+    """View para gerenciar tipos de turma"""
+    tipos_turma = TipoTurma.objects.all().order_by('nome')
+    competencias_disponiveis = Competencia.objects.all().order_by('nome')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'create':
+            nome = request.POST.get('nome')
+            descricao = request.POST.get('descricao', '')
+            competencias_ids = request.POST.getlist('competencias')
+            
+            if nome:
+                try:
+                    tipo_turma = TipoTurma.objects.create(
+                        nome=nome,
+                        descricao=descricao
+                    )
+                    
+                    if competencias_ids:
+                        tipo_turma.competencias.set(competencias_ids)
+                    
+                    messages.success(request, f'Tipo de turma "{tipo_turma.nome}" criado com sucesso!')
+                except Exception as e:
+                    messages.error(request, f'Erro ao criar tipo de turma: {str(e)}')
+            else:
+                messages.error(request, 'Nome é obrigatório.')
+        
+        return redirect('admin_panel:gerenciar_tipos_turma')
+    
+    context = {
+        'tipos_turma': tipos_turma,
+        'competencias_disponiveis': competencias_disponiveis,
+        'title': 'Gerenciar Tipos de Turma'
+    }
+    return render(request, 'admin_panel/gerenciar_tipos_turma.html', context)

@@ -20,7 +20,7 @@ def dashboard_view(request):
         # 2. Filtra as turmas onde o 'professor_responsavel' é esse professor
         turmas_do_professor = Turma.objects.filter(
             professor_responsavel=professor
-        ).order_by('nome')
+        ).order_by('tipo_turma__nome', 'identificador_turma')
 
     except AttributeError:
         # Caso de segurança: se o usuário logado não for um professor
@@ -50,9 +50,9 @@ def lancamento_notas_view(request, turma_id):
         turma=turma
     ).order_by('nome_completo')
     
-    # Busca as competências da turma
-    competencias_da_turma = turma.competencias.all()
-    total_competencias = competencias_da_turma.count()
+    # Busca as competências da turma através do tipo de turma
+    competencias_da_turma = turma.competencias.all() if turma.competencias else []
+    total_competencias = len(competencias_da_turma)
     
     # Calcula o progresso de cada aluno
     alunos_com_progresso = []
@@ -95,7 +95,7 @@ def lancamento_notas_aluno_view(request, turma_id, aluno_id):
     aluno = get_object_or_404(Aluno, pk=aluno_id, turma=turma)
     
     # Pega as competências que esta turma específica deve ter
-    competencias_da_turma = turma.competencias.all().order_by('nome')
+    competencias_da_turma = turma.competencias.all().order_by('nome') if turma.competencias else []
 
     if request.method == 'POST':
         # --- LÓGICA DE SALVAR (POST) ---

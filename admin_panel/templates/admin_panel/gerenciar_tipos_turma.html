@@ -1,0 +1,246 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1>{{ title }}</h1>
+    
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Formulário para criar novo tipo de turma -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Criar Novo Tipo de Turma</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="nome">Nome do Tipo de Turma:</label>
+                            <input type="text" class="form-control" id="nome" name="nome" 
+                                   placeholder="Ex: Basic 1, High Resolution 4" required>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="descricao">Descrição (opcional):</label>
+                            <input type="text" class="form-control" id="descricao" name="descricao" 
+                                   placeholder="Breve descrição do tipo de turma">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="form-group">
+                            <label>Competências para este Tipo de Turma:</label>
+                            <div class="competencias-selection">
+                                {% if competencias_disponiveis %}
+                                    {% for competencia in competencias_disponiveis %}
+                                        <div class="competencia-checkbox">
+                                            <input type="checkbox" 
+                                                   id="comp_{{ competencia.id }}" 
+                                                   name="competencias" 
+                                                   value="{{ competencia.id }}">
+                                            <label for="comp_{{ competencia.id }}">
+                                                {{ competencia.nome }} 
+                                                <small class="text-muted">({{ competencia.get_tipo_nota_display }})</small>
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted">
+                                        Nenhuma competência disponível. 
+                                        <a href="{% url 'admin_panel:gerenciar_competencias' %}">Criar competências primeiro</a>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-success form-control">Criar Tipo</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Lista de tipos de turma existentes -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Tipos de Turma Cadastrados ({{ tipos_turma|length }})</h3>
+        </div>
+        <div class="card-body">
+            {% if tipos_turma %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Descrição</th>
+                                <th>Competências</th>
+                                <th>Turmas Criadas</th>
+                                <th>Total de Alunos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tipo in tipos_turma %}
+                                <tr>
+                                    <td><strong>{{ tipo.nome }}</strong></td>
+                                    <td>{{ tipo.descricao|default:"-" }}</td>
+                                    <td>
+                                        {% if tipo.competencias.all %}
+                                            <div class="competencias-list">
+                                                {% for competencia in tipo.competencias.all %}
+                                                    <span class="badge badge-info">
+                                                        {{ competencia.nome }}
+                                                        <small>({{ competencia.get_tipo_nota_display }})</small>
+                                                    </span>
+                                                {% endfor %}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Nenhuma competência</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ tipo.turmas.count }}</strong> turma(s)
+                                        {% if tipo.turmas.all %}
+                                            <br>
+                                            <small class="text-muted">
+                                                {% for turma in tipo.turmas.all %}
+                                                    {{ turma.identificador_turma }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}
+                                            </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with total_alunos=tipo.turmas.all|length %}
+                                            {% if total_alunos > 0 %}
+                                                {% for turma in tipo.turmas.all %}
+                                                    {{ turma.alunos.count }}{% if not forloop.last %} + {% endif %}
+                                                {% endfor %}
+                                                = 
+                                                {% with soma=0 %}
+                                                    {% for turma in tipo.turmas.all %}
+                                                        {% with soma=soma|add:turma.alunos.count %}{% endwith %}
+                                                    {% endfor %}
+                                                {% endwith %}
+                                                <!-- Calculado via template não é ideal, vamos fazer no backend -->
+                                                <strong>{{ tipo.turmas.all.0.alunos.count|default:0 }}</strong>
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">Nenhum tipo de turma cadastrado ainda.</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Informações sobre como usar -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h4>Como Usar o Sistema de Tipos de Turma</h4>
+        </div>
+        <div class="card-body">
+            <ol>
+                <li><strong>Criar Competências:</strong> Primeiro, certifique-se de ter criado as competências necessárias na seção <a href="{% url 'admin_panel:gerenciar_competencias' %}">Gerenciar Competências</a>.</li>
+                <li><strong>Criar Tipos de Turma:</strong> Defina os tipos de turma (Ex: Basic 1, Basic 2, High Resolution 4) e associe as competências apropriadas.</li>
+                <li><strong>Criar Turmas:</strong> No admin do Django, ao criar uma turma, selecione o tipo de turma e defina apenas o identificador (Ex: TT18, MW20).</li>
+                <li><strong>Competências Automáticas:</strong> As competências serão automaticamente herdadas do tipo de turma selecionado.</li>
+            </ol>
+            
+            <h5>Exemplos de Identificadores:</h5>
+            <ul>
+                <li><code>TT18</code> - Tuesday/Thursday 18h</li>
+                <li><code>MW20</code> - Monday/Wednesday 20h</li>
+                <li><code>SEG19</code> - Segunda-feira 19h</li>
+                <li><code>SABMANHA</code> - Sábado de manhã</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px 8px 0 0;
+}
+.card-body {
+    padding: 15px;
+}
+.alert {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+.alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+.alert-warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
+
+.competencias-selection {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.competencia-checkbox {
+    margin-bottom: 8px;
+    padding: 5px;
+}
+
+.competencia-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+.competencias-list .badge {
+    display: inline-block;
+    margin: 2px;
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.table { margin-bottom: 0; }
+.btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; }
+.btn-success { background-color: #28a745; color: white; }
+.form-control { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; }
+</style>
+
+{% endblock %}

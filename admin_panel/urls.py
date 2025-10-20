@@ -22,4 +22,21 @@ urlpatterns = [
         views.importar_alunos_view, 
         name='importar_alunos'
     ),
+    # URLs para gerenciar competências
+    path(
+        'competencias/',
+        views.gerenciar_competencias_view,
+        name='gerenciar_competencias'
+    ),
+    path(
+        'competencias/deletar/<int:competencia_id>/',
+        views.deletar_competencia_view,
+        name='deletar_competencia'
+    ),
+    # URLs para gerenciar tipos de turma
+    path(
+        'tipos-turma/',
+        views.gerenciar_tipos_turma_view,
+        name='gerenciar_tipos_turma'
+    ),
 ]

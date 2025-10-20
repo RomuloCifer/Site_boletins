@@ -1,0 +1,223 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-admin">
+    <h1>{{ title }}</h1>
+    
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Formulário para criar nova competência -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3>Criar Nova Competência</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="nome">Nome da Competência:</label>
+                            <input type="text" class="form-control" id="nome" name="nome" required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="tipo_nota">Tipo de Nota:</label>
+                            <select class="form-control" id="tipo_nota" name="tipo_nota" required>
+                                <option value="">Selecione...</option>
+                                {% for choice_key, choice_label in tipo_nota_choices %}
+                                    <option value="{{ choice_key }}">{{ choice_label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-success form-control">Criar</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Lista de competências existentes -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Competências Cadastradas ({{ competencias|length }})</h3>
+        </div>
+        <div class="card-body">
+            {% if competencias %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Tipo de Nota</th>
+                                <th>Tipos de Turma que Usam</th>
+                                <th>Notas Lançadas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for competencia in competencias %}
+                                <tr>
+                                    <td>{{ competencia.nome }}</td>
+                                    <td>{{ competencia.get_tipo_nota_display }}</td>
+                                    <td>
+                                        {% if competencia.tipos_turma.all %}
+                                            {{ competencia.tipos_turma.count }} tipo(s)
+                                            <small class="text-muted">
+                                                ({% for tipo in competencia.tipos_turma.all %}{{ tipo.nome }}{% if not forloop.last %}, {% endif %}{% endfor %})
+                                            </small>
+                                        {% else %}
+                                            <span class="text-muted">Nenhum</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ competencia.lancamentos_de_nota.count }} nota(s)
+                                    </td>
+                                    <td>
+                                        <button type="button" 
+                                                class="btn btn-danger btn-sm" 
+                                                onclick="confirmarDelecao('{{ competencia.id }}', '{{ competencia.nome }}', '{{ competencia.tipos_turma.count }}', '{{ competencia.lancamentos_de_nota.count }}')">
+                                            Deletar
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">Nenhuma competência cadastrada ainda.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmação para deletar -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja deletar a competência <strong id="competenciaNome"></strong>?</p>
+                <div id="avisoUso" class="alert alert-warning" style="display: none;">
+                    <p><strong>Atenção:</strong> Esta competência está sendo usada:</p>
+                    <ul>
+                        <li id="tiposInfo"></li>
+                        <li id="notasInfo"></li>
+                    </ul>
+                    <p>Ao deletar esta competência, todas as notas associadas também serão removidas!</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="competencia_id" id="competenciaId">
+                    <button type="submit" class="btn btn-danger">Sim, Deletar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px 8px 0 0;
+}
+.card-body {
+    padding: 15px;
+}
+.alert {
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+.alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+.alert-warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
+.table { margin-bottom: 0; }
+.btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; }
+.btn-success { background-color: #28a745; color: white; }
+.btn-danger { background-color: #dc3545; color: white; }
+.btn-secondary { background-color: #6c757d; color: white; }
+.form-control { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; }
+</style>
+
+<script>
+function confirmarDelecao(id, nome, tiposCount, notasCount) {
+    document.getElementById('competenciaId').value = id;
+    document.getElementById('competenciaNome').textContent = nome;
+    
+    const avisoUso = document.getElementById('avisoUso');
+    const tiposInfo = document.getElementById('tiposInfo');
+    const notasInfo = document.getElementById('notasInfo');
+    
+    if (parseInt(tiposCount) > 0 || parseInt(notasCount) > 0) {
+        avisoUso.style.display = 'block';
+        tiposInfo.textContent = `Usada em ${tiposCount} tipo(s) de turma`;
+        notasInfo.textContent = `Possui ${notasCount} nota(s) lançada(s)`;
+    } else {
+        avisoUso.style.display = 'none';
+    }
+    
+    $('#deleteModal').modal('show');
+}
+
+// Simular Bootstrap modal se não estiver disponível
+if (typeof $ === 'undefined' || !$.fn.modal) {
+    function showModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+    function hideModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // Substituir chamadas do modal
+    window.$ = {
+        fn: {
+            modal: function(action) {
+                if (action === 'show') {
+                    this[0].style.display = 'block';
+                }
+            }
+        }
+    };
+    
+    // Função para substituir o modal do Bootstrap
+    function $(selector) {
+        return [document.querySelector(selector)];
+    }
+}
+</script>
+
+{% endblock %}

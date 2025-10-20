@@ -284,6 +284,63 @@
             backdrop-filter: blur(10px);
         }
         
+        /* Estilos do Menu de Navegação */
+        .navigation-menu {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .navigation-menu h3 {
+            color: #333;
+            margin: 0 0 1.5rem 0;
+            font-size: 1.4rem;
+        }
+        
+        .nav-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+        
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 10px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .nav-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+        
+        .nav-btn-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+        }
+        
+        .nav-btn-text strong {
+            display: block;
+            font-size: 1rem;
+            margin-bottom: 0.2rem;
+        }
+        
+        .nav-btn-text small {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -337,6 +394,41 @@
     <div class="container">
         <div class="breadcrumb">
             <a href="/admin/">🏠 Administração</a> › 📊 Dashboard Administrativo
+        </div>
+        
+        <!-- Menu de Navegação Rápida -->
+        <div class="navigation-menu">
+            <h3>🛠️ Ferramentas de Administração</h3>
+            <div class="nav-buttons">
+                <a href="{% url 'admin_panel:gerenciar_competencias' %}" class="nav-btn">
+                    <div class="nav-btn-icon">📚</div>
+                    <div class="nav-btn-text">
+                        <strong>Gerenciar Competências</strong>
+                        <small>Criar e deletar competências</small>
+                    </div>
+                </a>
+                <a href="{% url 'admin_panel:gerenciar_tipos_turma' %}" class="nav-btn">
+                    <div class="nav-btn-icon">🏫</div>
+                    <div class="nav-btn-text">
+                        <strong>Tipos de Turma</strong>
+                        <small>Basic 1, HR4, etc.</small>
+                    </div>
+                </a>
+                <a href="{% url 'admin_panel:importar_alunos' %}" class="nav-btn">
+                    <div class="nav-btn-icon">📥</div>
+                    <div class="nav-btn-text">
+                        <strong>Importar Alunos</strong>
+                        <small>Upload CSV/Excel</small>
+                    </div>
+                </a>
+                <a href="/admin/core/turma/add/" class="nav-btn">
+                    <div class="nav-btn-icon">➕</div>
+                    <div class="nav-btn-text">
+                        <strong>Nova Turma</strong>
+                        <small>Criar turma</small>
+                    </div>
+                </a>
+            </div>
         </div>
         
         <!-- Estatísticas Gerais -->
