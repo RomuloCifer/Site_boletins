@@ -44,6 +44,69 @@
     border: 1px solid #777;
 }
 
+/* Estilos para mensagens melhoradas */
+.messages {
+    margin: 20px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.messages li {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.messages li.success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left-color: #28a745;
+}
+
+.messages li.success::before {
+    content: "✅";
+    font-size: 16px;
+}
+
+.messages li.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left-color: #ffc107;
+}
+
+.messages li.warning::before {
+    content: "⚠️";
+    font-size: 16px;
+}
+
+.messages li.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left-color: #dc3545;
+}
+
+.messages li.error::before {
+    content: "❌";
+    font-size: 16px;
+}
+
+.messages li.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left-color: #17a2b8;
+}
+
+.messages li.info::before {
+    content: "ℹ️";
+    font-size: 16px;
+}
+
 /* Estilo para o botão "Voltar" */
 .back-button {
     display: inline-block;

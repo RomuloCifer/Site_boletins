@@ -22,13 +22,70 @@ def dashboard_view(request):
             professor_responsavel=professor
         ).order_by('tipo_turma__nome', 'identificador_turma')
 
+        # 3. Calcula estatísticas de progresso para cada turma
+        turmas_com_estatisticas = []
+        for turma in turmas_do_professor:
+            # Busca alunos e competências da turma
+            alunos_da_turma = Aluno.objects.filter(turma=turma)
+            competencias_da_turma = turma.competencias.all() if turma.competencias else []
+            
+            total_alunos = alunos_da_turma.count()
+            total_competencias = len(competencias_da_turma)
+            
+            # Calcula estatísticas
+            if total_alunos > 0 and total_competencias > 0:
+                # Total de notas possíveis na turma
+                total_notas_possiveis = total_alunos * total_competencias
+                
+                # Notas já lançadas na turma
+                notas_lancadas = LancamentoDeNota.objects.filter(
+                    aluno__turma=turma,
+                    competencia__in=competencias_da_turma
+                ).count()
+                
+                # Porcentagem de conclusão da turma
+                progresso_turma = int((notas_lancadas / total_notas_possiveis) * 100)
+                
+                # Alunos com todas as notas completas
+                alunos_completos = 0
+                for aluno in alunos_da_turma:
+                    notas_do_aluno = LancamentoDeNota.objects.filter(
+                        aluno=aluno,
+                        competencia__in=competencias_da_turma
+                    ).count()
+                    if notas_do_aluno == total_competencias:
+                        alunos_completos += 1
+                        
+                # Porcentagem de alunos com notas completas
+                alunos_completos_percent = int((alunos_completos / total_alunos) * 100) if total_alunos > 0 else 0
+            else:
+                progresso_turma = 0
+                notas_lancadas = 0
+                total_notas_possiveis = 0
+                alunos_completos = 0
+                alunos_completos_percent = 0
+            
+            turmas_com_estatisticas.append({
+                'turma': turma,
+                'total_alunos': total_alunos,
+                'total_competencias': total_competencias,
+                'notas_lancadas': notas_lancadas,
+                'total_notas_possiveis': total_notas_possiveis,
+                'progresso_turma': progresso_turma,
+                'alunos_completos': alunos_completos,
+                'alunos_completos_percent': alunos_completos_percent,
+                # Status visual baseado no progresso
+                'status_class': 'complete' if progresso_turma >= 90 else 'good' if progresso_turma >= 70 else 'warning' if progresso_turma >= 40 else 'critical'
+            })
+
     except AttributeError:
         # Caso de segurança: se o usuário logado não for um professor
         # (ex: o 'admin' tentou logar aqui), ele não terá o '.professor'
-        turmas_do_professor = [] 
+        turmas_com_estatisticas = [] 
 
     context = {
         'turmas': turmas_do_professor,
+        'turmas_com_estatisticas': turmas_com_estatisticas,
     }
     
     # Renderiza o template do dashboard (que já criamos)

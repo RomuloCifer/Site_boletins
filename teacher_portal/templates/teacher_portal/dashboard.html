@@ -33,6 +33,168 @@
         .logout-button:hover {
             background: #e00;
         }
+        
+        /* Novos estilos para cards de turma */
+        .turmas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .turma-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .turma-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        
+        .turma-card.complete { border-left-color: #28a745; }
+        .turma-card.good { border-left-color: #17a2b8; }
+        .turma-card.warning { border-left-color: #ffc107; }
+        .turma-card.critical { border-left-color: #dc3545; }
+        
+        .turma-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .turma-header h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.2rem;
+        }
+        
+        .turma-id {
+            background: #f8f9fa;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .turma-stats {
+            margin-bottom: 20px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .progress-bar {
+            position: relative;
+            width: 100px;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+        }
+        
+        .turma-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+            flex-grow: 1;
+            text-align: center;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-badge.complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.incomplete {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .no-turmas {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .no-turmas h3 {
+            color: #999;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .turmas-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -47,19 +209,61 @@
             </div>
 
     <div class="container">
-        <h2>Minhas Turmas</h2>
+        <h2>Minhas Turmas ({{ turmas_com_estatisticas|length }})</h2>
         
-        <ul class="turma-list">
-            {% for turma in turmas %}
-                <li>
-                <a href="{% url 'teacher_portal:lancamento_notas' turma.pk %}">
-                    {{ turma.nome }} ({{ turma.identificador_turma }})
-                </a>
-            </li>
-            {% empty %}
-                <p class="no-turmas">Você ainda não foi associado a nenhuma turma.</p>
-            {% endfor %}
-        </ul>
+        {% if turmas_com_estatisticas %}
+            <div class="turmas-grid">
+                {% for turma_info in turmas_com_estatisticas %}
+                    <div class="turma-card {{ turma_info.status_class }}">
+                        <div class="turma-header">
+                            <h3>{{ turma_info.turma.nome }}</h3>
+                            <span class="turma-id">{{ turma_info.turma.identificador_turma }}</span>
+                        </div>
+                        
+                        <div class="turma-stats">
+                            <div class="stat-row">
+                                <span class="stat-label">Progresso Geral:</span>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: {{ turma_info.progresso_turma }}%"></div>
+                                    <span class="progress-text">{{ turma_info.progresso_turma }}%</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-row">
+                                <span class="stat-label">Alunos Completos:</span>
+                                <span class="stat-value">{{ turma_info.alunos_completos }}/{{ turma_info.total_alunos }} ({{ turma_info.alunos_completos_percent }}%)</span>
+                            </div>
+                            
+                            <div class="stat-row">
+                                <span class="stat-label">Notas Lançadas:</span>
+                                <span class="stat-value">{{ turma_info.notas_lancadas }}/{{ turma_info.total_notas_possiveis }}</span>
+                            </div>
+                            
+                            <div class="stat-row">
+                                <span class="stat-label">Competências:</span>
+                                <span class="stat-value">{{ turma_info.total_competencias }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="turma-actions">
+                            <a href="{% url 'teacher_portal:lancamento_notas' turma_info.turma.pk %}" class="btn-primary">
+                                📝 Lançar Notas
+                            </a>
+                            {% if turma_info.progresso_turma < 100 %}
+                                <span class="status-badge incomplete">{{ turma_info.total_notas_possiveis|add:"-"|add:turma_info.notas_lancadas }} pendentes</span>
+                            {% else %}
+                                <span class="status-badge complete">✅ Completa</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-turmas">
+                <h3>📚 Nenhuma turma atribuída</h3>
+                <p>Você ainda não foi associado a nenhuma turma. Entre em contato com a coordenação.</p>
+            </div>
+        {% endif %}
     </div>
 
 </body>

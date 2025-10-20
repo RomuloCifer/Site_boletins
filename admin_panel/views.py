@@ -11,8 +11,8 @@ import io
 def dashboard_admin_view(request):
     """Dashboard administrativo com visão geral de todas as turmas e progresso."""
     
-    # Busca todas as turmas
-    turmas = Turma.objects.all().order_by('nome')
+    # Busca todas as turmas ordenadas por tipo e identificador
+    turmas = Turma.objects.all().order_by('tipo_turma__nome', 'identificador_turma')
     
     turmas_com_progresso = []
     for turma in turmas:
@@ -210,14 +210,17 @@ def importar_alunos_view(request):
                             alunos_atualizados += 1
                     else:
                         erros_turma_nao_encontrada.add(id_turma_csv)
-                        
-                    messages.success(request, 
-                    f"Importação EM LOTE concluída. "
-                    f"Criados: {alunos_criados} | Atualizados: {alunos_atualizados}."
+                
+                # Mensagens após processamento completo
+                messages.success(request, 
+                    f"Importação EM LOTE concluída! "
+                    f"✅ Criados: {alunos_criados} | 🔄 Atualizados: {alunos_atualizados} | "
+                    f"📊 Total processado: {alunos_criados + alunos_atualizados}"
                 )
-                    if erros_turma_nao_encontrada:
-                        mensagens_erro = ", ".join(erros_turma_nao_encontrada)
-                        messages.warning(request, f"As seguintes turmas não foram encontradas: {mensagens_erro}.")
+                
+                if erros_turma_nao_encontrada:
+                    mensagens_erro = ", ".join(erros_turma_nao_encontrada)
+                    messages.warning(request, f"⚠️ Turmas não encontradas: {mensagens_erro}. Estes alunos não foram importados.")
             else:
                 # O 'try/except' externo vai pegar Turma.DoesNotExist se o ID for inválido
                 turma = Turma.objects.get(id=turma_id)
@@ -236,8 +239,9 @@ def importar_alunos_view(request):
                         alunos_atualizados += 1
                 
                 messages.success(request, 
-                    f"Importação concluída para a Turma '{turma.nome}'. "
-                    f"Criados: {alunos_criados} | Atualizados: {alunos_atualizados}."
+                    f"✅ Importação concluída para '{turma.nome}'! "
+                    f"📥 Criados: {alunos_criados} | 🔄 Atualizados: {alunos_atualizados} | "
+                    f"📊 Total: {alunos_criados + alunos_atualizados} alunos"
                 )
         except Turma.DoesNotExist: 
             messages.error(request, "Turma selecionada não existe.")
@@ -365,3 +369,142 @@ def gerenciar_tipos_turma_view(request):
         'title': 'Gerenciar Tipos de Turma'
     }
     return render(request, 'admin_panel/gerenciar_tipos_turma.html', context)
+
+
+@staff_member_required
+def dashboard_analytics_data_view(request):
+    """View que retorna dados JSON para gráficos do dashboard"""
+    
+    # 1. Dados de progresso por tipo de turma
+    tipos_progresso = []
+    for tipo in TipoTurma.objects.all():
+        turmas_do_tipo = Turma.objects.filter(tipo_turma=tipo)
+        if turmas_do_tipo.exists():
+            total_notas_possiveis = 0
+            total_notas_lancadas = 0
+            
+            for turma in turmas_do_tipo:
+                alunos_count = Aluno.objects.filter(turma=turma).count()
+                competencias_count = turma.competencias.count() if turma.competencias else 0
+                notas_possiveis = alunos_count * competencias_count
+                
+                if turma.competencias and competencias_count > 0:
+                    notas_lancadas = LancamentoDeNota.objects.filter(
+                        aluno__turma=turma,
+                        competencia__in=turma.competencias.all()
+                    ).count()
+                else:
+                    notas_lancadas = 0
+                
+                total_notas_possiveis += notas_possiveis
+                total_notas_lancadas += notas_lancadas
+            
+            progresso = int((total_notas_lancadas / total_notas_possiveis) * 100) if total_notas_possiveis > 0 else 0
+            
+            tipos_progresso.append({
+                'nome': tipo.nome,
+                'progresso': progresso,
+                'notas_lancadas': total_notas_lancadas,
+                'notas_possiveis': total_notas_possiveis,
+                'turmas_count': turmas_do_tipo.count()
+            })
+    
+    # 2. Dados de desempenho por competência
+    competencias_stats = []
+    for competencia in Competencia.objects.all():
+        notas_competencia = LancamentoDeNota.objects.filter(competencia=competencia)
+        total_notas = notas_competencia.count()
+        
+        if total_notas > 0:
+            # Para notas numéricas, calcular média
+            if competencia.tipo_nota == 'NUM':
+                notas_numericas = []
+                for nota in notas_competencia:
+                    try:
+                        valor = float(nota.nota_valor)
+                        notas_numericas.append(valor)
+                    except ValueError:
+                        pass
+                
+                media = sum(notas_numericas) / len(notas_numericas) if notas_numericas else 0
+                
+                competencias_stats.append({
+                    'nome': competencia.nome,
+                    'tipo': 'Numérica',
+                    'total_notas': total_notas,
+                    'media': round(media, 1)
+                })
+            
+            # Para notas categóricas, contar distribuição
+            else:
+                distribuicao = {}
+                for nota in notas_competencia:
+                    valor = nota.nota_valor
+                    distribuicao[valor] = distribuicao.get(valor, 0) + 1
+                
+                competencias_stats.append({
+                    'nome': competencia.nome,
+                    'tipo': 'Categórica',
+                    'total_notas': total_notas,
+                    'distribuicao': distribuicao
+                })
+    
+    # 3. Dados de professores e suas turmas
+    professores_stats = []
+    for professor in Professor.objects.all():
+        turmas_prof = Turma.objects.filter(professor_responsavel=professor)
+        total_alunos = sum(Aluno.objects.filter(turma=turma).count() for turma in turmas_prof)
+        
+        total_notas_lancadas = 0
+        total_notas_possiveis = 0
+        
+        for turma in turmas_prof:
+            alunos_count = Aluno.objects.filter(turma=turma).count()
+            competencias_count = turma.competencias.count() if turma.competencias else 0
+            notas_possiveis = alunos_count * competencias_count
+            
+            if turma.competencias and competencias_count > 0:
+                notas_lancadas = LancamentoDeNota.objects.filter(
+                    aluno__turma=turma,
+                    competencia__in=turma.competencias.all()
+                ).count()
+            else:
+                notas_lancadas = 0
+            
+            total_notas_possiveis += notas_possiveis
+            total_notas_lancadas += notas_lancadas
+        
+        progresso = int((total_notas_lancadas / total_notas_possiveis) * 100) if total_notas_possiveis > 0 else 0
+        
+        professores_stats.append({
+            'nome': professor.user.get_full_name() or professor.user.username,
+            'turmas_count': turmas_prof.count(),
+            'alunos_count': total_alunos,
+            'progresso': progresso,
+            'notas_lancadas': total_notas_lancadas,
+            'notas_possiveis': total_notas_possiveis
+        })
+    
+    data = {
+        'tipos_progresso': tipos_progresso,
+        'competencias_stats': competencias_stats,
+        'professores_stats': professores_stats,
+        'resumo': {
+            'total_turmas': Turma.objects.count(),
+            'total_alunos': Aluno.objects.count(),
+            'total_notas': LancamentoDeNota.objects.count(),
+            'total_professores': Professor.objects.count(),
+            'total_competencias': Competencia.objects.count()
+        }
+    }
+    
+    return JsonResponse(data)
+
+
+@staff_member_required
+def dashboard_analytics_view(request):
+    """View para exibir a página de analytics com gráficos"""
+    context = {
+        'title': 'Dashboard Analytics'
+    }
+    return render(request, 'admin_panel/dashboard_analytics.html', context)

@@ -39,4 +39,16 @@ urlpatterns = [
         views.gerenciar_tipos_turma_view,
         name='gerenciar_tipos_turma'
     ),
+    # Dashboard de analytics
+    path(
+        'analytics/',
+        views.dashboard_analytics_view,
+        name='analytics'
+    ),
+    # API endpoint para dados de gráficos
+    path(
+        'api/analytics-data/',
+        views.dashboard_analytics_data_view,
+        name='analytics_data'
+    ),
 ]
