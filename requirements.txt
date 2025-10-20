@@ -19,6 +19,9 @@ python-decouple==3.8
 # Timezone support (útil para projetos Django)
 pytz==2024.2
 
+# Validação de dados e serialização
+djangorestframework==3.15.2
+
 # Banco de dados PostgreSQL (caso queira migrar do SQLite)
 # psycopg2-binary==2.9.9
 
@@ -28,6 +31,19 @@ pytz==2024.2
 # Ferramentas de desenvolvimento (descomente se precisar)
 # django-debug-toolbar==4.4.6
 # django-extensions==3.2.3
+
+# Formatação e linting de código
+# black==24.10.0
+# flake8==7.1.1
+
+# Biblioteca para whitenoise (servir arquivos estáticos em produção)
+whitenoise==6.6.0
+
+# Biblioteca para validação de dados
+django-crispy-forms==2.3
+
+# Biblioteca para CORS (caso precise de API externa)
+django-cors-headers==5.0.0
 
 # Testes e qualidade de código (descomente se precisar)
 # pytest==8.3.3

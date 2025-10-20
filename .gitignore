@@ -18,6 +18,31 @@ db.sqlite3
 # Para arquivos como o .zip que você tem na pasta.
 *.zip
 *.rar
+
+# --- Configurações Sensíveis ---
+.env
+local_settings.py
+*.log
+
+# --- Arquivos Estáticos Coletados ---
+staticfiles/
+media/
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# --- Sistema Operacional ---
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# --- Scripts de Desenvolvimento ---
+criar_dados_analytics.py
+criar_dados_exemplo.py
+criar_teste_pequeno.py
 *.log
 
 # (Opcional, mas boa prática para equipes)

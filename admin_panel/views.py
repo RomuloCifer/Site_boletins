@@ -4,10 +4,11 @@ from django.contrib.admin.views.decorators import staff_member_required # Garant
 from django.contrib import messages
 from django.http import JsonResponse
 from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota, TipoTurma
+from .decorators import group_required, admin_only, coordinador_or_admin, secretaria_or_above
 import io
 # Create your views here.
 
-@staff_member_required
+@coordinador_or_admin
 def dashboard_admin_view(request):
     """Dashboard administrativo com visão geral de todas as turmas e progresso."""
     
@@ -66,7 +67,7 @@ def dashboard_admin_view(request):
     
     return render(request, 'admin_panel/dashboard_admin.html', context)
 
-@staff_member_required
+@coordinador_or_admin
 def detalhes_turma_view(request, turma_id):
     """Exibe detalhes específicos de uma turma para coordenação."""
     try:
@@ -161,7 +162,7 @@ def handle_uploaded_file(uploaded_file):
     return df
 
 # Importação de alunos via CSV/Excel
-@staff_member_required
+@secretaria_or_above
 def importar_alunos_view(request):
     turmas = Turma.objects.all() # Carrega todas as turmas para o dropdown
     if request.method == 'POST': # Verifica se o método é POST
@@ -259,7 +260,7 @@ def importar_alunos_view(request):
     return render(request, 'admin_panel/importar_alunos.html', context) # Renderiza o template
 
 
-@staff_member_required
+@coordinador_or_admin
 def gerenciar_competencias_view(request):
     """View para gerenciar competências - listar, criar e deletar"""
     competencias = Competencia.objects.all().order_by('nome')
@@ -316,7 +317,7 @@ def gerenciar_competencias_view(request):
     return render(request, 'admin_panel/gerenciar_competencias.html', context)
 
 
-@staff_member_required
+@admin_only
 def deletar_competencia_view(request, competencia_id):
     """View para confirmar e deletar uma competência"""
     if request.method == 'POST':
@@ -331,7 +332,7 @@ def deletar_competencia_view(request, competencia_id):
     return redirect('admin_panel:gerenciar_competencias')
 
 
-@staff_member_required
+@admin_only
 def gerenciar_tipos_turma_view(request):
     """View para gerenciar tipos de turma"""
     tipos_turma = TipoTurma.objects.all().order_by('nome')
@@ -371,7 +372,7 @@ def gerenciar_tipos_turma_view(request):
     return render(request, 'admin_panel/gerenciar_tipos_turma.html', context)
 
 
-@staff_member_required
+@coordinador_or_admin
 def dashboard_analytics_data_view(request):
     """View que retorna dados JSON para gráficos do dashboard"""
     
@@ -501,7 +502,7 @@ def dashboard_analytics_data_view(request):
     return JsonResponse(data)
 
 
-@staff_member_required
+@coordinador_or_admin
 def dashboard_analytics_view(request):
     """View para exibir a página de analytics com gráficos"""
     context = {
