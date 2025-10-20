@@ -13,9 +13,11 @@
         .container { max-width: 900px; margin: 2rem auto; padding: 2rem; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
         .aluno-list { list-style: none; padding: 0; }
-        .aluno-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; }
-        .aluno-item a { text-decoration: none; color: #337ab7; font-size: 1.2rem; font-weight: bold; }
-        .aluno-item a:hover { color: #23527c; }
+        .aluno-item { display: block; text-decoration: none; color: inherit; }
+        .aluno-content { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: all 0.2s ease; }
+        .aluno-item:hover .aluno-content { background-color: #f5f5f5; border-color: #bbb; }
+        .aluno-nome { color: #337ab7; font-size: 1.2rem; font-weight: bold; text-decoration: none; }
+        .aluno-item:hover .aluno-nome { color: #23527c; }
 
         /* Nossos novos estilos de status baseados em porcentagem */
         .status-badge { font-size: 1rem; font-weight: bold; padding: 0.4rem 0.8rem; border-radius: 4px; color: white; min-width: 50px; text-align: center;}
@@ -37,22 +39,26 @@
         
         <ul class="aluno-list">
             {% for aluno_info in alunos_com_progresso %}
-                <li class="aluno-item">
-                    <a href="{% url 'teacher_portal:lancamento_notas_aluno' turma_id=turma.pk aluno_id=aluno_info.aluno.pk %}">
-                        {{ aluno_info.aluno.nome_completo }}
+                <li>
+                    <a href="{% url 'teacher_portal:lancamento_notas_aluno' turma_id=turma.pk aluno_id=aluno_info.aluno.pk %}" class="aluno-item">
+                        <div class="aluno-content">
+                            <span class="aluno-nome">
+                                {{ aluno_info.aluno.nome_completo }}
+                            </span>
+                            
+                            <span class="status-badge 
+                                   {% if aluno_info.progresso == 100 %}
+                                       status-green
+                                   {% elif aluno_info.progresso >= 50 %}
+                                       status-orange
+                                   {% else %}
+                                       status-red
+                                   {% endif %}
+                                  ">
+                                {{ aluno_info.progresso }}%
+                            </span>
+                        </div>
                     </a>
-                    
-                    <span class="status-badge 
-                           {% if aluno_info.progresso == 100 %}
-                               status-green
-                           {% elif aluno_info.progresso >= 50 %}
-                               status-orange
-                           {% else %}
-                               status-red
-                           {% endif %}
-                          ">
-                        {{ aluno_info.progresso }}%
-                    </span>
                 </li>
             {% empty %}
                 <p class="no-alunos">Nenhum aluno foi importado para esta turma ainda.</p>
