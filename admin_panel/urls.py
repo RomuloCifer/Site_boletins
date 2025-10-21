@@ -51,4 +51,10 @@ urlpatterns = [
         views.dashboard_analytics_data_view,
         name='analytics_data'
     ),
+    # Configuração da data limite
+    path(
+        'configurar-data-limite/',
+        views.configurar_data_limite_view,
+        name='configurar_data_limite'
+    ),
 ]

@@ -86,6 +86,7 @@ def dashboard_view(request):
     except AttributeError:
         # Caso de segurança: se o usuário logado não for um professor
         # (ex: o 'admin' tentou logar aqui), ele não terá o '.professor'
+        turmas_do_professor = []
         turmas_com_estatisticas = [] 
 
     # ===== LÓGICA DA DATA LIMITE =====
