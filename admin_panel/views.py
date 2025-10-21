@@ -6,8 +6,131 @@ from django.http import JsonResponse
 from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema
 from .decorators import group_required, admin_only, coordinador_or_admin, secretaria_or_above
 import io
+import re
+import unicodedata
 from datetime import date, datetime
 # Create your views here.
+
+def normalizar_nome(nome):
+    """Normaliza um nome para detectar duplicatas"""
+    if not nome:
+        return ""
+    
+    # Remove acentos
+    nome_sem_acento = unicodedata.normalize('NFD', nome)
+    nome_sem_acento = ''.join(char for char in nome_sem_acento if unicodedata.category(char) != 'Mn')
+    
+    # Remove espaços extras, converte para minúsculo
+    nome_limpo = re.sub(r'\s+', ' ', nome_sem_acento.lower().strip())
+    
+    return nome_limpo
+
+def detectar_alunos_duplicados():
+    """Detecta possíveis alunos duplicados baseado em nomes completos normalizados"""
+    alunos_por_nome = {}
+    problemas = []
+    
+    # Agrupa alunos por nome normalizado
+    for aluno in Aluno.objects.all():
+        nome_normalizado = normalizar_nome(aluno.nome_completo)
+        
+        # Só considera duplicata se o nome completo normalizado for idêntico
+        # E tiver pelo menos 3 palavras (para evitar nomes muito simples)
+        palavras_nome = nome_normalizado.split()
+        if len(palavras_nome) >= 3:  # Ex: "ana beatriz santos" (3+ palavras)
+            if nome_normalizado not in alunos_por_nome:
+                alunos_por_nome[nome_normalizado] = []
+            alunos_por_nome[nome_normalizado].append(aluno)
+    
+    # Encontra grupos com mais de um aluno
+    for nome_normalizado, alunos in alunos_por_nome.items():
+        if len(alunos) > 1:
+            # Verifica se estão na mesma turma (mais crítico)
+            turmas_afetadas = set(aluno.turma.nome for aluno in alunos if aluno.turma)
+            mesma_turma = len(turmas_afetadas) == 1 and len(alunos) > 1
+            
+            problemas.append({
+                'tipo': 'aluno_duplicado',
+                'severidade': 'alta' if mesma_turma else 'media',
+                'descricao': f'{len(alunos)} aluno(s) com nome idêntico: {alunos[0].nome_completo}',
+                'detalhes': {
+                    'alunos': alunos,
+                    'mesma_turma': mesma_turma,
+                    'turmas': list(turmas_afetadas),
+                    'nome_normalizado': nome_normalizado
+                }
+            })
+    
+    return problemas
+
+def detectar_turmas_sem_professor():
+    """Detecta turmas sem professor responsável"""
+    turmas_problema = Turma.objects.filter(professor_responsavel__isnull=True)
+    problemas = []
+    
+    for turma in turmas_problema:
+        problemas.append({
+            'tipo': 'turma_sem_professor',
+            'severidade': 'alta',
+            'descricao': f'Turma {turma.nome} sem professor responsável',
+            'detalhes': {
+                'turma': turma,
+                'total_alunos': Aluno.objects.filter(turma=turma).count()
+            }
+        })
+    
+    return problemas
+
+def detectar_professores_sem_turma():
+    """Detecta professores sem turma atribuída"""
+    professores_problema = Professor.objects.filter(turmas__isnull=True)
+    problemas = []
+    
+    for professor in professores_problema:
+        nome = professor.user.get_full_name() or professor.user.username
+        problemas.append({
+            'tipo': 'professor_sem_turma',
+            'severidade': 'baixa',
+            'descricao': f'Professor {nome} sem turma atribuída',
+            'detalhes': {
+                'professor': professor,
+                'usuario_ativo': professor.user.is_active
+            }
+        })
+    
+    return problemas
+
+def analisar_problemas_sistema():
+    """Analisa todos os problemas do sistema e retorna estatísticas"""
+    # Detecta diferentes tipos de problemas
+    alunos_duplicados = detectar_alunos_duplicados()
+    turmas_sem_professor = detectar_turmas_sem_professor()
+    professores_sem_turma = detectar_professores_sem_turma()
+    
+    # Organiza alunos duplicados por severidade
+    duplicados_por_severidade = {'alta': [], 'media': []}
+    for problema in alunos_duplicados:
+        duplicados_por_severidade[problema['severidade']].append(problema)
+    
+    # Conta totais
+    total_problemas = len(alunos_duplicados) + len(turmas_sem_professor) + len(professores_sem_turma)
+    
+    estatisticas = {
+        'total_problemas': total_problemas,
+        'alunos_duplicados': {
+            'alta': len(duplicados_por_severidade['alta']),
+            'media': len(duplicados_por_severidade['media'])
+        } if alunos_duplicados else {},
+        'turmas_sem_professor': len(turmas_sem_professor),
+        'professores_sem_turma': len(professores_sem_turma),
+        'problemas_detalhados': {
+            'alunos_duplicados': alunos_duplicados,
+            'turmas_sem_professor': turmas_sem_professor,
+            'professores_sem_turma': professores_sem_turma
+        }
+    }
+    
+    return estatisticas
 
 @coordinador_or_admin
 def dashboard_admin_view(request):
@@ -58,12 +181,16 @@ def dashboard_admin_view(request):
             'professor_nome': professor_nome,
         })
     
+    # Analisar problemas do sistema
+    problemas_sistema = analisar_problemas_sistema()
+    
     context = {
         'turmas_com_progresso': turmas_com_progresso,
         'total_turmas': turmas.count(),
         'total_alunos_geral': sum(t['total_alunos'] for t in turmas_com_progresso),
         'total_notas_lancadas_geral': sum(t['notas_lancadas'] for t in turmas_com_progresso),
         'total_notas_possiveis_geral': sum(t['total_notas_possiveis'] for t in turmas_com_progresso),
+        'problemas_sistema': problemas_sistema,
     }
     
     return render(request, 'admin_panel/dashboard_admin.html', context)

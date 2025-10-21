@@ -1,0 +1,424 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:admin_problemas' %}">Possíveis Problemas</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>
+        <i class="fas fa-user-tie"></i>
+        {{ title }}
+    </h1>
+    <p class="dashboard-description">
+        Professores cadastrados que não possuem turmas atribuídas
+    </p>
+</div>
+
+<div class="professores-container">
+    {% if professores_problema %}
+        <div class="alert alert-warning">
+            <i class="fas fa-info-circle"></i>
+            <strong>Otimização!</strong> {{ professores_problema|length }} professor{{ professores_problema|length|pluralize:"es" }} encontrado{{ professores_problema|length|pluralize:"s" }} sem turmas atribuídas.
+        </div>
+
+        {% for problema in professores_problema %}
+        <div class="professor-card media">
+            <div class="professor-header">
+                <div class="professor-info">
+                    {% with professor=problema.detalhes.professor %}
+                    <h3>{{ professor.user.get_full_name|default:professor.user.username }}</h3>
+                    <span class="professor-email">{{ professor.user.email|default:"Email não informado" }}</span>
+                    <span class="severity-badge media">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        OTIMIZAÇÃO
+                    </span>
+                    {% endwith %}
+                </div>
+                <div class="professor-summary">
+                    <span class="status {% if problema.detalhes.usuario_ativo %}ativo{% else %}inativo{% endif %}">
+                        <i class="fas fa-circle"></i>
+                        {% if problema.detalhes.usuario_ativo %}Ativo{% else %}Inativo{% endif %}
+                    </span>
+                    <span class="tipo">Professor</span>
+                </div>
+            </div>
+            
+            <div class="professor-content">
+                <div class="problema-descricao">
+                    <i class="fas fa-info-circle"></i>
+                    {{ problema.descricao }}
+                </div>
+                
+                <div class="professor-detalhes">
+                    <div class="detalhe-item">
+                        <strong>Nome de Usuário:</strong> {{ problema.detalhes.professor.user.username }}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Email:</strong> {{ problema.detalhes.professor.user.email|default:"Não informado" }}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Status da Conta:</strong> 
+                        <span class="status-account {% if problema.detalhes.usuario_ativo %}ativo{% else %}inativo{% endif %}">
+                            {% if problema.detalhes.usuario_ativo %}Ativa{% else %}Inativa{% endif %}
+                        </span>
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Data de Cadastro:</strong> {{ problema.detalhes.professor.user.date_joined|date:"d/m/Y" }}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Último Login:</strong> 
+                        {% if problema.detalhes.professor.user.last_login %}
+                            {{ problema.detalhes.professor.user.last_login|date:"d/m/Y H:i" }}
+                        {% else %}
+                            Nunca fez login
+                        {% endif %}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Turmas Atribuídas:</strong> 
+                        <span class="status-problema">Nenhuma</span>
+                    </div>
+                </div>
+                
+                <div class="professor-actions">
+                    <a href="{% url 'admin:core_professor_change' problema.detalhes.professor.id %}" class="btn btn-edit" target="_blank">
+                        <i class="fas fa-edit"></i>
+                        Editar Professor
+                    </a>
+                    <a href="{% url 'admin:core_turma_changelist' %}" class="btn btn-list" target="_blank">
+                        <i class="fas fa-chalkboard"></i>
+                        Ver Turmas
+                    </a>
+                    <a href="{% url 'admin:core_turma_add' %}" class="btn btn-add" target="_blank">
+                        <i class="fas fa-plus"></i>
+                        Criar Nova Turma
+                    </a>
+                    <button class="btn btn-resolve" data-professor-id="{{ problema.detalhes.professor.id }}">
+                        <i class="fas fa-check"></i>
+                        Marcar como Resolvido
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="help-section">
+            <h3><i class="fas fa-lightbulb"></i> Como Otimizar:</h3>
+            <ol>
+                <li><strong>Atribuir turmas existentes:</strong> Vá em "Ver Turmas" e edite uma turma para atribuir este professor</li>
+                <li><strong>Criar nova turma:</strong> Clique em "Criar Nova Turma" e atribua este professor como responsável</li>
+                <li><strong>Verificar necessidade:</strong> Se o professor não é mais necessário, considere desativar a conta</li>
+                <li><strong>Atualizar informações:</strong> Clique em "Editar Professor" para verificar os dados</li>
+            </ol>
+        </div>
+
+        <div class="stats-section">
+            <h3><i class="fas fa-chart-bar"></i> Estatísticas:</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">{{ professores_problema|length }}</span>
+                    <span class="stat-label">Professor{{ professores_problema|length|pluralize:"es" }} sem turma</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">
+                        {% for problema in professores_problema %}
+                            {% if problema.detalhes.usuario_ativo %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% empty %}0{% endfor %}
+                    </span>
+                    <span class="stat-label">Professor{{ professores_problema|length|pluralize:"es" }} ativo{{ professores_problema|length|pluralize:"s" }}</span>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+        <div class="no-problems">
+            <i class="fas fa-check-circle"></i>
+            <h2>Todos os Professores Têm Turmas!</h2>
+            <p>Excelente! Todos os professores cadastrados possuem turmas atribuídas ou estão inativos.</p>
+            <a href="{% url 'admin:admin_problemas' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Voltar para Problemas
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.professores-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.professor-card {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-left: 5px solid;
+}
+
+.professor-card.media {
+    border-left-color: #ff9800;
+}
+
+.professor-header {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.professor-info h3 {
+    margin: 0;
+    color: #333;
+}
+
+.professor-email {
+    display: block;
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0.3rem 0;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.severity-badge.media {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.professor-summary {
+    text-align: right;
+}
+
+.professor-summary span {
+    display: block;
+    font-size: 0.9rem;
+    margin-bottom: 0.3rem;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.status.ativo {
+    color: #4caf50;
+}
+
+.status.inativo {
+    color: #f44336;
+}
+
+.status i {
+    font-size: 0.7rem;
+}
+
+.professor-content {
+    padding: 1.5rem;
+}
+
+.problema-descricao {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.professor-detalhes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detalhe-item {
+    padding: 0.8rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.status-account.ativo {
+    color: #4caf50;
+    font-weight: bold;
+}
+
+.status-account.inativo {
+    color: #f44336;
+    font-weight: bold;
+}
+
+.status-problema {
+    color: #ff9800;
+    font-weight: bold;
+}
+
+.professor-actions {
+    border-top: 1px solid #dee2e6;
+    padding-top: 1rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-edit {
+    background: #2196f3;
+    color: white;
+}
+
+.btn-list {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-add {
+    background: #9c27b0;
+    color: white;
+}
+
+.btn-resolve {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+.help-section, .stats-section {
+    background: #f0f7ff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+}
+
+.help-section h3, .stats-section h3 {
+    color: #1976d2;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-section ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.help-section li {
+    margin-bottom: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 6px;
+}
+
+.stat-number {
+    display: block;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1976d2;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.no-problems {
+    text-align: center;
+    padding: 3rem;
+    color: #4caf50;
+}
+
+.no-problems i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.no-problems h2 {
+    color: #4caf50;
+    margin-bottom: 1rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-resolve').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const professorId = this.dataset.professorId;
+            if (confirm('Marcar este professor como resolvido? (O problema não será mais exibido)')) {
+                // Aqui você pode implementar a lógica de marcação como resolvido
+                alert('Funcionalidade de resolução será implementada em breve.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

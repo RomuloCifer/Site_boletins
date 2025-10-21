@@ -1,0 +1,181 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>
+        <i class="fas fa-exclamation-triangle"></i>
+        {{ title }}
+    </h1>
+    <p class="dashboard-description">
+        Central de resolução de problemas do sistema
+    </p>
+</div>
+
+<div class="problemas-dashboard">
+    <div class="problemas-stats">
+        <div class="stat-card">
+            <div class="stat-icon alta">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Alta Prioridade</h3>
+                <p class="stat-number">{{ problemas_sistema.alunos_duplicados.alta|default:"0" }}</p>
+                <small>Duplicados mesma turma + {{ problemas_sistema.turmas_sem_professor|default:"0" }} turmas s/ prof</small>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon media">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Média Prioridade</h3>
+                <p class="stat-number">{{ problemas_sistema.alunos_duplicados.media|default:"0" }}</p>
+                <small>Duplicados diferentes turmas + {{ problemas_sistema.professores_sem_turma|default:"0" }} prof s/ turma</small>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="stat-content">
+                <h3>Total</h3>
+                <p class="stat-number">{{ problemas_sistema.total_problemas|default:"0" }}</p>
+                <small>Todos os problemas detectados</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="problemas-actions">
+        <h2>
+            <i class="fas fa-tools"></i>
+            Ações Disponíveis
+        </h2>
+        
+        <div class="actions-grid">
+            <a href="{% url 'admin:admin_duplicados' %}" class="action-card primary">
+                <div class="action-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Alunos Duplicados</h3>
+                    <p>{{ problemas_sistema.alunos_duplicados.alta|add:problemas_sistema.alunos_duplicados.media }} casos detectados</p>
+                    <div class="severity-indicators">
+                        {% if problemas_sistema.alunos_duplicados.alta > 0 %}
+                            <span class="severity alta">{{ problemas_sistema.alunos_duplicados.alta }} Alta</span>
+                        {% endif %}
+                        {% if problemas_sistema.alunos_duplicados.media > 0 %}
+                            <span class="severity media">{{ problemas_sistema.alunos_duplicados.media }} Média</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="action-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin:admin_turmas_sem_professor' %}" class="action-card secondary">
+                <div class="action-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Turmas sem Professor</h3>
+                    <p>{{ problemas_sistema.turmas_sem_professor }} turmas precisam de professor</p>
+                    {% if problemas_sistema.turmas_sem_professor > 0 %}
+                        <span class="severity alta">Prioridade Alta</span>
+                    {% else %}
+                        <span class="severity ok">Tudo OK</span>
+                    {% endif %}
+                </div>
+                <div class="action-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+            
+            <a href="{% url 'admin:admin_professores_sem_turma' %}" class="action-card tertiary">
+                <div class="action-icon">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Professores sem Turma</h3>
+                    <p>{{ problemas_sistema.professores_sem_turma }} professores disponíveis</p>
+                    {% if problemas_sistema.professores_sem_turma > 0 %}
+                        <span class="severity media">Otimização</span>
+                    {% else %}
+                        <span class="severity ok">Tudo OK</span>
+                    {% endif %}
+                </div>
+                <div class="action-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.problemas-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.problemas-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-icon.alta {
+    background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+}
+
+.stat-icon.media {
+    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+}
+
+.stat-icon.total {
+    background: linear-gradient(135deg, #2196f3, #1976d2) !important;
+}
+
+.severity-indicators {
+    margin-top: 0.5rem;
+}
+
+.severity {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.severity.alta {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.severity.media {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.severity.ok {
+    background: #e8f5e8;
+    color: #388e3c;
+}
+</style>
+{% endblock %}

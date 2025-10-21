@@ -117,6 +117,47 @@
             margin: 0;
         }
         
+        .stat-card.problemas {
+            border-left: 5px solid #f44336;
+        }
+        
+        .stat-card.problemas .stat-number {
+            color: #f44336;
+        }
+        
+        .problemas-detalhes {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        
+        .problema-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .problema-item:last-child {
+            border-bottom: none;
+        }
+        
+        .gravidade-alta {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        
+        .gravidade-media {
+            color: #f57c00;
+            font-weight: bold;
+        }
+        
+        .gravidade-baixa {
+            color: #388e3c;
+            font-weight: bold;
+        }
+        
         .stat-label {
             color: #666;
             font-size: 1.1rem;
@@ -459,15 +500,42 @@
                 <div class="stat-number">{{ total_notas_lancadas_geral }}</div>
                 <div class="stat-label">Notas Lançadas</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card problemas">
                 <div class="stat-number">
-                    {% if total_notas_possiveis_geral > 0 %}
-                        {{ total_notas_lancadas_geral|floatformat:0 }}/{{ total_notas_possiveis_geral }}
-                    {% else %}
-                        0/0
+                    {{ problemas_sistema.total_problemas }}
+                </div>
+                <div class="stat-label">Possíveis Problemas</div>
+                <div class="problemas-detalhes">
+                    {% if problemas_sistema.alunos_duplicados %}
+                        <div class="problema-item">
+                            <span>Alunos Duplicados:</span>
+                            <span>
+                                {% for gravidade, count in problemas_sistema.alunos_duplicados.items %}
+                                    <span class="gravidade-{{ gravidade }}">{{ count }}</span>
+                                    {% if not forloop.last %} | {% endif %}
+                                {% endfor %}
+                            </span>
+                        </div>
+                    {% endif %}
+                    {% if problemas_sistema.turmas_sem_professor > 0 %}
+                        <div class="problema-item">
+                            <span>Turmas sem Professor:</span>
+                            <span class="gravidade-alta">{{ problemas_sistema.turmas_sem_professor }}</span>
+                        </div>
+                    {% endif %}
+                    {% if problemas_sistema.professores_sem_turma > 0 %}
+                        <div class="problema-item">
+                            <span>Professores sem Turma:</span>
+                            <span class="gravidade-media">{{ problemas_sistema.professores_sem_turma }}</span>
+                        </div>
+                    {% endif %}
+                    {% if problemas_sistema.total_problemas == 0 %}
+                        <div style="text-align: center; color: #4caf50; font-weight: bold;">
+                            Sistema OK ✓
+                        </div>
                     {% endif %}
                 </div>
-                <div class="stat-label">Progresso Geral</div>
+            </div>
             </div>
         </div>
 

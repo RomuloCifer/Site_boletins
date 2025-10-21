@@ -1,0 +1,296 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:admin_problemas' %}">Possíveis Problemas</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>
+        <i class="fas fa-users"></i>
+        {{ title }}
+    </h1>
+    <p class="dashboard-description">
+        Resolva casos de alunos com nomes idênticos no sistema
+    </p>
+</div>
+
+<div class="duplicados-container">
+    {% if alunos_duplicados %}
+        {% for duplicado in alunos_duplicados %}
+        <div class="duplicado-card {% if duplicado.severidade == 'alta' %}alta{% else %}media{% endif %}">
+            <div class="duplicado-header">
+                <div class="duplicado-info">
+                    <h3>{{ duplicado.detalhes.alunos.0.nome_completo }}</h3>
+                    <span class="severity-badge {% if duplicado.severidade == 'alta' %}alta{% else %}media{% endif %}">
+                        <i class="fas fa-{% if duplicado.severidade == 'alta' %}exclamation-circle{% else %}exclamation-triangle{% endif %}"></i>
+                        {% if duplicado.severidade == 'alta' %}ALTA PRIORIDADE{% else %}MÉDIA PRIORIDADE{% endif %}
+                    </span>
+                </div>
+                <div class="duplicado-summary">
+                    <span class="count">{{ duplicado.detalhes.alunos|length }} alunos</span>
+                    <span class="turmas">{{ duplicado.detalhes.turmas|length }} turma{{ duplicado.detalhes.turmas|length|pluralize:"s" }}</span>
+                </div>
+            </div>
+            
+            <div class="duplicado-content">
+                <div class="alunos-list">
+                    {% for aluno in duplicado.detalhes.alunos %}
+                    <div class="aluno-item">
+                        <div class="aluno-info">
+                            <strong>ID: {{ aluno.id }}</strong>
+                            <span class="aluno-turma">
+                                <i class="fas fa-chalkboard"></i>
+                                {% if aluno.turma %}
+                                    {{ aluno.turma.nome }} ({{ aluno.turma.identificador_turma }})
+                                {% else %}
+                                    Sem turma
+                                {% endif %}
+                            </span>
+                            {% if aluno.turma.professor_responsavel %}
+                                <span class="aluno-professor">
+                                    <i class="fas fa-user-tie"></i>
+                                    {{ aluno.turma.professor_responsavel.user.get_full_name|default:aluno.turma.professor_responsavel.user.username }}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="aluno-actions">
+                            <a href="{% url 'admin:core_aluno_change' aluno.id %}" class="btn btn-edit" target="_blank">
+                                <i class="fas fa-edit"></i> Editar
+                            </a>
+                            <button class="btn btn-delete" onclick="confirmarExclusao({{ aluno.id }}, '{{ aluno.nome_completo|escapejs }}')">
+                                <i class="fas fa-trash"></i> Excluir
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="duplicado-actions">
+                    <button class="btn btn-merge" data-aluno-id="{{ duplicado.detalhes.alunos.0.id }}">
+                        <i class="fas fa-compress-arrows-alt"></i>
+                        Mesclar Registros
+                    </button>
+                    <button class="btn btn-resolve" data-aluno-id="{{ duplicado.detalhes.alunos.0.id }}">
+                        <i class="fas fa-check"></i>
+                        Marcar como Resolvido
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-problems">
+            <i class="fas fa-check-circle"></i>
+            <h2>Nenhum Aluno Duplicado Encontrado!</h2>
+            <p>O sistema não detectou casos de alunos com nomes idênticos.</p>
+            <a href="{% url 'admin:admin_problemas' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Voltar para Problemas
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.duplicados-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.duplicado-card {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-left: 5px solid;
+}
+
+.duplicado-card.alta {
+    border-left-color: #f44336;
+}
+
+.duplicado-card.media {
+    border-left-color: #ff9800;
+}
+
+.duplicado-header {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.duplicado-info h3 {
+    margin: 0;
+    color: #333;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.severity-badge.alta {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.severity-badge.media {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.duplicado-summary {
+    text-align: right;
+}
+
+.duplicado-summary span {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.duplicado-content {
+    padding: 1.5rem;
+}
+
+.alunos-list {
+    margin-bottom: 1.5rem;
+}
+
+.aluno-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.aluno-info span {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.aluno-info i {
+    margin-right: 0.5rem;
+    width: 14px;
+}
+
+.aluno-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-edit {
+    background: #2196f3;
+    color: white;
+}
+
+.btn-delete {
+    background: #f44336;
+    color: white;
+}
+
+.btn-merge {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-resolve {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+.duplicado-actions {
+    border-top: 1px solid #dee2e6;
+    padding-top: 1rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.no-problems {
+    text-align: center;
+    padding: 3rem;
+    color: #4caf50;
+}
+
+.no-problems i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.no-problems h2 {
+    color: #4caf50;
+    margin-bottom: 1rem;
+}
+</style>
+
+<script>
+function confirmarExclusao(alunoId, nomeAluno) {
+    if (confirm(`Tem certeza que deseja excluir o aluno "${nomeAluno}"?`)) {
+        // Aqui você pode implementar a lógica de exclusão via AJAX
+        alert('Funcionalidade de exclusão será implementada em breve.');
+    }
+}
+
+// Event listeners para os botões
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-merge').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const alunoId = this.dataset.alunoId;
+            alert('Funcionalidade de mesclagem será implementada em breve.');
+        });
+    });
+    
+    document.querySelectorAll('.btn-resolve').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const alunoId = this.dataset.alunoId;
+            alert('Funcionalidade de resolução será implementada em breve.');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -45,15 +45,35 @@
         </div>
     </div>
     
-    <div class="stat-card">
+    <a href="{% url 'admin:admin_problemas' %}" class="stat-card problemas-card">
         <div class="stat-icon">
-            <i class="fas fa-clipboard-check"></i>
+            <i class="fas fa-exclamation-triangle"></i>
         </div>
         <div class="stat-content">
-            <h3>Competências</h3>
-            <p class="stat-number">{{ total_competencias|default:"--" }}</p>
+            <h3>Possíveis Problemas</h3>
+            <p class="stat-number">{{ problemas_sistema.total_problemas|default:"--" }}</p>
+            {% if problemas_sistema.total_problemas > 0 %}
+            <div class="problemas-preview">
+                {% if problemas_sistema.alunos_duplicados.alta > 0 or problemas_sistema.alunos_duplicados.media > 0 %}
+                    <span class="problema-item">
+                        <i class="fas fa-users"></i> 
+                        {{ problemas_sistema.alunos_duplicados.alta|add:problemas_sistema.alunos_duplicados.media }} duplicados
+                    </span>
+                {% endif %}
+                {% if problemas_sistema.turmas_sem_professor > 0 %}
+                    <span class="problema-item">
+                        <i class="fas fa-chalkboard-teacher"></i> 
+                        {{ problemas_sistema.turmas_sem_professor }} turmas s/ prof
+                    </span>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="sistema-ok">
+                <i class="fas fa-check-circle"></i> Sistema OK
+            </div>
+            {% endif %}
         </div>
-    </div>
+    </a>
 </div>
 
 <div class="quick-actions">
@@ -114,59 +134,65 @@
                 <i class="fas fa-arrow-right"></i>
             </div>
         </a>
+        
+        <a href="#admin-section" class="action-card admin-section-link">
+            <div class="action-icon">
+                <i class="fas fa-tools"></i>
+            </div>
+            <div class="action-content">
+                <h3>Gerenciar Sistema</h3>
+                <p>Criar usuários, competências e mais</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-down"></i>
+            </div>
+        </a>
     </div>
 </div>
 
 {% if app_list %}
-<div class="apps-section">
+<div class="apps-section" id="admin-section">
     <h2>
-        <i class="fas fa-th-large"></i>
-        Administração do Sistema
+        <i class="fas fa-tools"></i>
+        Gerenciar Sistema
     </h2>
+    <p class="apps-description">
+        Criar, editar e gerenciar todos os dados do sistema educacional
+    </p>
     
     <div class="app-list">
         {% for app in app_list %}
             <div class="module app-{{ app.app_label }}">
-                <table>
-                    <caption>
-                        <a href="{{ app.app_url }}" class="section">
-                            <i class="fas fa-cube"></i>
-                            {{ app.name }}
-                        </a>
-                    </caption>
+                <div class="app-header">
+                    <h3>
+                        <i class="fas fa-cube"></i>
+                        {{ app.name }}
+                    </h3>
+                </div>
+                <div class="models-grid">
                     {% for model in app.models %}
-                        <tr class="model-{{ model.object_name|lower }}">
-                            {% if model.admin_url %}
-                                <th scope="row">
-                                    <a href="{{ model.admin_url }}">
-                                        <i class="fas fa-database"></i>
-                                        {{ model.name }}
-                                    </a>
-                                </th>
-                            {% else %}
-                                <th scope="row">
-                                    <i class="fas fa-database"></i>
-                                    {{ model.name }}
-                                </th>
-                            {% endif %}
-
-                            <td>
+                        <div class="model-card model-{{ model.object_name|lower }}">
+                            <div class="model-header">
+                                <i class="fas fa-database"></i>
+                                <h4>{{ model.name }}</h4>
+                            </div>
+                            <div class="model-actions">
                                 {% if model.add_url %}
-                                    <a href="{{ model.add_url }}" class="addlink">
+                                    <a href="{{ model.add_url }}" class="action-btn add-btn">
                                         <i class="fas fa-plus"></i>
-                                        Adicionar
+                                        <span>Adicionar</span>
                                     </a>
                                 {% endif %}
                                 {% if model.admin_url %}
-                                    <a href="{{ model.admin_url }}" class="changelink">
-                                        <i class="fas fa-edit"></i>
-                                        Alterar
+                                    <a href="{{ model.admin_url }}" class="action-btn list-btn">
+                                        <i class="fas fa-list"></i>
+                                        <span>Listar</span>
                                     </a>
                                 {% endif %}
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                     {% endfor %}
-                </table>
+                </div>
             </div>
         {% endfor %}
     </div>
@@ -430,6 +456,209 @@
     .dashboard-header {
         padding: 1.5rem !important;
     }
+}
+
+/* Estilos para o card de problemas */
+.problemas-card {
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.problemas-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(244, 67, 54, 0.3) !important;
+}
+
+.problemas-card .stat-icon {
+    background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+}
+
+.problemas-card .stat-icon i {
+    color: white !important;
+}
+
+.problemas-card .stat-number {
+    color: #f44336 !important;
+    font-weight: bold !important;
+}
+
+.problemas-preview {
+    margin-top: 0.5rem !important;
+    font-size: 0.8rem !important;
+    opacity: 0.8 !important;
+}
+
+.problema-item {
+    display: block !important;
+    margin: 0.2rem 0 !important;
+    color: #f44336 !important;
+}
+
+.problema-item i {
+    margin-right: 0.3rem !important;
+    width: 12px !important;
+}
+
+.sistema-ok {
+    margin-top: 0.5rem !important;
+    font-size: 0.8rem !important;
+    color: #4caf50 !important;
+    font-weight: bold !important;
+}
+
+.sistema-ok i {
+    margin-right: 0.3rem !important;
+}
+
+/* Estilos para o card de administração */
+.action-card.admin-section-link {
+    background: linear-gradient(135deg, #6c757d, #495057) !important;
+    color: white !important;
+}
+
+.action-card.admin-section-link:hover {
+    transform: translateY(-3px) !important;
+}
+
+/* Estilos para seção de administração */
+.apps-section {
+    margin-top: 3rem !important;
+    padding: 2rem !important;
+    background: white !important;
+    border-radius: 15px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+
+.apps-section h2 {
+    color: #333 !important;
+    font-weight: 600 !important;
+    font-size: 1.8rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.apps-section h2 i {
+    color: #6c757d !important;
+}
+
+.apps-description {
+    color: #666 !important;
+    margin-bottom: 2rem !important;
+    font-size: 1rem !important;
+}
+
+.app-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2rem !important;
+}
+
+.module {
+    background: #f8f9fa !important;
+    border-radius: 10px !important;
+    padding: 1.5rem !important;
+}
+
+.app-header h3 {
+    color: #495057 !important;
+    font-size: 1.3rem !important;
+    margin: 0 0 1rem 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.app-header h3 i {
+    color: #6c757d !important;
+}
+
+.models-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 1rem !important;
+}
+
+.model-card {
+    background: white !important;
+    border-radius: 8px !important;
+    padding: 1rem !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    transition: transform 0.3s ease !important;
+}
+
+.model-card:hover {
+    transform: translateY(-2px) !important;
+}
+
+.model-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.model-header i {
+    color: #007bff !important;
+    font-size: 1.1rem !important;
+}
+
+.model-header h4 {
+    margin: 0 !important;
+    color: #333 !important;
+    font-size: 1rem !important;
+}
+
+.model-actions {
+    display: flex !important;
+    gap: 0.5rem !important;
+}
+
+.action-btn {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.3rem !important;
+    padding: 0.6rem 0.8rem !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+.add-btn {
+    background: #28a745 !important;
+    color: white !important;
+}
+
+.add-btn:hover {
+    background: #218838 !important;
+    color: white !important;
+}
+
+.list-btn {
+    background: #007bff !important;
+    color: white !important;
+}
+
+.list-btn:hover {
+    background: #0056b3 !important;
+    color: white !important;
+}
+
+.action-btn i {
+    font-size: 0.8rem !important;
+}
+
+/* Scroll suave para navegação */
+html {
+    scroll-behavior: smooth !important;
 }
 </style>
 {% endblock %}

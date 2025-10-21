@@ -1,0 +1,328 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:admin_problemas' %}">Possíveis Problemas</a>
+&rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1>
+        <i class="fas fa-chalkboard-teacher"></i>
+        {{ title }}
+    </h1>
+    <p class="dashboard-description">
+        Turmas que precisam de um professor responsável atribuído
+    </p>
+</div>
+
+<div class="turmas-container">
+    {% if turmas_problema %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Atenção!</strong> {{ turmas_problema|length }} turma{{ turmas_problema|length|pluralize:"s" }} encontrada{{ turmas_problema|length|pluralize:"s" }} sem professor responsável.
+        </div>
+
+        {% for problema in turmas_problema %}
+        <div class="turma-card alta">
+            <div class="turma-header">
+                <div class="turma-info">
+                    <h3>{{ problema.detalhes.turma.nome }}</h3>
+                    <span class="turma-id">ID: {{ problema.detalhes.turma.identificador_turma }}</span>
+                    <span class="severity-badge alta">
+                        <i class="fas fa-exclamation-circle"></i>
+                        ALTA PRIORIDADE
+                    </span>
+                </div>
+                <div class="turma-summary">
+                    <span class="count">{{ problema.detalhes.total_alunos }} aluno{{ problema.detalhes.total_alunos|pluralize:"s" }}</span>
+                    <span class="tipo">{{ problema.detalhes.turma.tipo_turma.nome }}</span>
+                </div>
+            </div>
+            
+            <div class="turma-content">
+                <div class="problema-descricao">
+                    <i class="fas fa-info-circle"></i>
+                    {{ problema.descricao }}
+                </div>
+                
+                <div class="turma-detalhes">
+                    <div class="detalhe-item">
+                        <strong>Tipo de Turma:</strong> {{ problema.detalhes.turma.tipo_turma.nome }}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Total de Alunos:</strong> {{ problema.detalhes.total_alunos }}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Competências:</strong> {{ problema.detalhes.turma.tipo_turma.competencias.count }}
+                    </div>
+                    <div class="detalhe-item">
+                        <strong>Status:</strong> 
+                        <span class="status-problema">Sem Professor Responsável</span>
+                    </div>
+                </div>
+                
+                <div class="turma-actions">
+                    <a href="{% url 'admin:core_turma_change' problema.detalhes.turma.id %}" class="btn btn-edit" target="_blank">
+                        <i class="fas fa-edit"></i>
+                        Atribuir Professor
+                    </a>
+                    <a href="{% url 'admin:core_professor_changelist' %}" class="btn btn-list" target="_blank">
+                        <i class="fas fa-users"></i>
+                        Ver Professores
+                    </a>
+                    <button class="btn btn-resolve" data-turma-id="{{ problema.detalhes.turma.id }}">
+                        <i class="fas fa-check"></i>
+                        Marcar como Resolvido
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="help-section">
+            <h3><i class="fas fa-lightbulb"></i> Como Resolver:</h3>
+            <ol>
+                <li><strong>Clique em "Atribuir Professor"</strong> para editar a turma</li>
+                <li><strong>Selecione um professor responsável</strong> no campo correspondente</li>
+                <li><strong>Salve as alterações</strong> para resolver o problema</li>
+                <li><strong>Verifique se há professores disponíveis</strong> clicando em "Ver Professores"</li>
+            </ol>
+        </div>
+
+    {% else %}
+        <div class="no-problems">
+            <i class="fas fa-check-circle"></i>
+            <h2>Todas as Turmas Têm Professor!</h2>
+            <p>Excelente! Todas as turmas do sistema possuem um professor responsável atribuído.</p>
+            <a href="{% url 'admin:admin_problemas' %}" class="btn btn-back">
+                <i class="fas fa-arrow-left"></i> Voltar para Problemas
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.turmas-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.alert {
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.alert-danger {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+.turma-card {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border-left: 5px solid;
+}
+
+.turma-card.alta {
+    border-left-color: #f44336;
+}
+
+.turma-header {
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.turma-info h3 {
+    margin: 0;
+    color: #333;
+}
+
+.turma-id {
+    display: inline-block;
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    margin: 0.5rem 0;
+}
+
+.severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 0.5rem;
+}
+
+.severity-badge.alta {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.turma-summary {
+    text-align: right;
+}
+
+.turma-summary span {
+    display: block;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.turma-content {
+    padding: 1.5rem;
+}
+
+.problema-descricao {
+    background: #fff3cd;
+    color: #856404;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.turma-detalhes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detalhe-item {
+    padding: 0.8rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.status-problema {
+    color: #d32f2f;
+    font-weight: bold;
+}
+
+.turma-actions {
+    border-top: 1px solid #dee2e6;
+    padding-top: 1rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-edit {
+    background: #2196f3;
+    color: white;
+}
+
+.btn-list {
+    background: #4caf50;
+    color: white;
+}
+
+.btn-resolve {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-back {
+    background: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.8;
+    transform: translateY(-1px);
+}
+
+.help-section {
+    background: #e3f2fd;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+}
+
+.help-section h3 {
+    color: #1976d2;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-section ol {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.help-section li {
+    margin-bottom: 0.5rem;
+}
+
+.no-problems {
+    text-align: center;
+    padding: 3rem;
+    color: #4caf50;
+}
+
+.no-problems i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.no-problems h2 {
+    color: #4caf50;
+    margin-bottom: 1rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.btn-resolve').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const turmaId = this.dataset.turmaId;
+            if (confirm('Marcar esta turma como resolvida? (O problema não será mais exibido)')) {
+                // Aqui você pode implementar a lógica de marcação como resolvido
+                alert('Funcionalidade de resolução será implementada em breve.');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
