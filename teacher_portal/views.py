@@ -4,6 +4,9 @@ from django.contrib.auth.decorators import login_required
 # Importa o modelo Turma para podermos buscar as turmas
 from core.models import Turma, Aluno, LancamentoDeNota
 from django.contrib import messages
+from django.contrib.auth.views import LoginView
+from django.conf import settings
+import urllib.parse
 
 
 # Esta é a view do Dashboard que estava faltando
@@ -235,3 +238,27 @@ def lancamento_notas_aluno_view(request, turma_id, aluno_id):
             'competencias_com_notas': competencias_com_notas,
         }
         return render(request, 'teacher_portal/lancamento_notas_aluno.html', context)
+
+
+class CustomLoginView(LoginView):
+    """View customizada de login com variáveis de suporte."""
+    template_name = 'teacher_portal/login.html'
+    redirect_authenticated_user = True
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Adicionar informações de suporte WhatsApp
+        whatsapp_number = getattr(settings, 'WHATSAPP_SUPPORT_NUMBER', '5522999136252')
+        support_message = getattr(settings, 'SUPPORT_MESSAGE', 'Olá! Estou com dificuldades para acessar o Portal do Professor. Podem me ajudar?')
+        
+        # Criar URL do WhatsApp
+        whatsapp_url = f"https://wa.me/{whatsapp_number}?text={urllib.parse.quote(support_message)}"
+        
+        context.update({
+            'whatsapp_support_url': whatsapp_url,
+            'support_phone': whatsapp_number,
+            'support_message': support_message
+        })
+        
+        return context

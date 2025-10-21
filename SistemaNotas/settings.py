@@ -12,9 +12,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Carregar variáveis do arquivo .env
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -135,3 +139,7 @@ LOGIN_REDIRECT_URL = 'teacher_portal:dashboard' # Vamos criar essa URL em breve
 
 # 3. Após o logout, para onde ele deve ser enviado?
 LOGOUT_REDIRECT_URL = 'teacher_portal:login'
+
+# Configurações de Suporte
+WHATSAPP_SUPPORT_NUMBER = os.getenv('WHATSAPP_SUPPORT_NUMBER', '5522999136252')
+SUPPORT_MESSAGE = os.getenv('SUPPORT_MESSAGE', 'Olá! Estou com dificuldades para acessar o Portal do Professor. Podem me ajudar?')

@@ -11,10 +11,7 @@ urlpatterns = [
     # --- PÁGINA DE LOGIN ---
     path(
         'login/', 
-        auth_views.LoginView.as_view(
-            template_name='teacher_portal/login.html',
-            redirect_authenticated_user=True 
-        ),
+        views.CustomLoginView.as_view(),
         name='login'
     ),
 

@@ -226,11 +226,18 @@
             color: #667eea;
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.2s ease;
+            transition: all 0.2s ease;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .footer-link:hover {
-            color: #5a67d8;
+            color: #25D366;
+            background-color: rgba(37, 211, 102, 0.1);
+            transform: translateY(-1px);
         }
 
         /* Animações de entrada */
@@ -362,7 +369,13 @@
         <div class="login-footer">
             <p class="footer-text">
                 Problemas para acessar? 
-                <a href="#" class="footer-link">Entre em contato</a>
+                <a href="{{ whatsapp_support_url }}" 
+                   class="footer-link" 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   title="Falar no WhatsApp">
+                    📱 Entre em contato
+                </a>
             </p>
         </div>
     </div>
