@@ -65,35 +65,46 @@
             <p>Notas Lançadas</p>
         </div>
         <div class="stat-card">
-            <h3 id="total-professores">0</h3>
-            <p>Professores</p>
+            <h3 id="media-geral">0</h3>
+            <p>Média Geral</p>
         </div>
     </div>
 
     <!-- Gráficos -->
     <div class="charts-container">
-        <!-- Progresso por Tipo de Turma -->
-        <div class="chart-card">
-            <h2>Progresso por Tipo de Turma</h2>
-            <canvas id="tiposProgressoChart"></canvas>
+        <!-- Ranking de Competências por Média -->
+        <div class="chart-card chart-large">
+            <h2>📊 Ranking de Competências por Média</h2>
+            <p class="chart-description">Desempenho médio dos alunos em cada competência</p>
+            <canvas id="rankingCompetenciasChart"></canvas>
         </div>
 
         <!-- Performance dos Professores -->
-        <div class="chart-card">
-            <h2>Performance dos Professores</h2>
+        <div class="chart-card chart-large">
+            <h2>👨‍🏫 Progresso dos Professores</h2>
+            <p class="chart-description">Percentual de notas lançadas por professor</p>
             <canvas id="professoresChart"></canvas>
         </div>
 
-        <!-- Estatísticas de Competências -->
-        <div class="chart-card">
-            <h2>Competências - Médias</h2>
-            <canvas id="competenciasChart"></canvas>
+        <!-- Média das Competências por Tipo de Turma -->
+        <div class="chart-card chart-large">
+            <h2>🎯 Desempenho por Tipo de Turma</h2>
+            <p class="chart-description">Comparativo de médias entre diferentes tipos de turma</p>
+            <canvas id="competenciasPorTipoChart"></canvas>
         </div>
 
-        <!-- Distribuição de Notas (para competências categóricas) -->
-        <div class="chart-card">
-            <h2>Distribuição de Notas Categóricas</h2>
-            <canvas id="distribuicaoChart"></canvas>
+        <!-- Evolução Temporal -->
+        <div class="chart-card chart-large">
+            <h2>📈 Evolução das Avaliações</h2>
+            <p class="chart-description">Quantidade de notas lançadas nas últimas semanas</p>
+            <canvas id="evolucaoChart"></canvas>
+        </div>
+
+        <!-- Detalhes dos Professores -->
+        <div class="chart-card chart-full">
+            <h2>📋 Detalhamento por Professor</h2>
+            <p class="chart-description">Progresso detalhado de cada turma por professor</p>
+            <div id="professoresDetalhes"></div>
         </div>
     </div>
 </div>
@@ -141,20 +152,128 @@
 .chart-card {
     background: white;
     padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     border: 1px solid #e0e0e0;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.chart-large {
+    grid-column: span 1;
+}
+
+.chart-full {
+    grid-column: 1 / -1;
 }
 
 .chart-card h2 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.4em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-description {
+    color: #6c757d;
+    font-size: 0.9em;
     margin: 0 0 20px 0;
-    color: #333;
-    font-size: 1.5em;
+    font-style: italic;
 }
 
 canvas {
     max-width: 100%;
-    height: 300px !important;
+    height: 350px !important;
+}
+
+/* Estilos para detalhes dos professores */
+.professor-detail {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.professor-name {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.professor-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.stat-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.stat-item h4 {
+    margin: 0 0 5px 0;
+    color: #667eea;
+    font-size: 1.8em;
+}
+
+.stat-item p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.turma-progress {
+    margin-top: 15px;
+}
+
+.turma-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: white;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.turma-nome {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.progress-bar {
+    width: 150px;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 15px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-weight: bold;
+    color: #495057;
+    min-width: 40px;
+    text-align: right;
 }
 
 @media (max-width: 768px) {
@@ -162,8 +281,24 @@ canvas {
         grid-template-columns: 1fr;
     }
     
-    .chart-card {
-        min-width: auto;
+    .chart-large,
+    .chart-full {
+        grid-column: 1;
+    }
+    
+    .professor-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .turma-item {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        margin: 0;
     }
 }
 </style>
@@ -179,124 +314,44 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('total-turmas').textContent = data.resumo.total_turmas;
             document.getElementById('total-alunos').textContent = data.resumo.total_alunos;
             document.getElementById('total-notas').textContent = data.resumo.total_notas;
-            document.getElementById('total-professores').textContent = data.resumo.total_professores;
+            document.getElementById('media-geral').textContent = data.resumo.media_geral + '%';
 
-            // Gráfico de Progresso por Tipo de Turma
-            const tiposCtx = document.getElementById('tiposProgressoChart').getContext('2d');
-            new Chart(tiposCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.tipos_progresso.map(t => t.nome),
-                    datasets: [{
-                        label: 'Progresso (%)',
-                        data: data.tipos_progresso.map(t => t.progresso),
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.8)',
-                            'rgba(255, 99, 132, 0.8)',
-                            'rgba(255, 206, 86, 0.8)',
-                            'rgba(75, 192, 192, 0.8)',
-                            'rgba(153, 102, 255, 0.8)',
-                            'rgba(255, 159, 64, 0.8)',
-                            'rgba(199, 199, 199, 0.8)',
-                            'rgba(83, 102, 255, 0.8)',
-                            'rgba(255, 99, 255, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(199, 199, 199, 1)',
-                            'rgba(83, 102, 255, 1)',
-                            'rgba(255, 99, 255, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const item = data.tipos_progresso[context.dataIndex];
-                                    return [
-                                        `Turmas: ${item.turmas_count}`,
-                                        `Notas Lançadas: ${item.notas_lancadas}`,
-                                        `Notas Possíveis: ${item.notas_possiveis}`
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Gráfico de Performance dos Professores
-            const profCtx = document.getElementById('professoresChart').getContext('2d');
-            new Chart(profCtx, {
-                type: 'bar',
-                data: {
-                    labels: data.professores_stats.map(p => p.nome),
-                    datasets: [{
-                        label: 'Progresso (%)',
-                        data: data.professores_stats.map(p => p.progresso),
-                        backgroundColor: 'rgba(75, 192, 192, 0.8)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: 100
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const prof = data.professores_stats[context.dataIndex];
-                                    return [
-                                        `Turmas: ${prof.turmas_count}`,
-                                        `Alunos: ${prof.alunos_count}`,
-                                        `Notas: ${prof.notas_lancadas}/${prof.notas_possiveis}`
-                                    ];
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Gráfico de Competências (apenas numéricas)
-            const competenciasNumericas = data.competencias_stats.filter(c => c.tipo === 'Numérica');
-            if (competenciasNumericas.length > 0) {
-                const compCtx = document.getElementById('competenciasChart').getContext('2d');
-                new Chart(compCtx, {
-                    type: 'line',
+            // 1. Gráfico de Ranking de Competências por Média
+            if (data.ranking_competencias && data.ranking_competencias.length > 0) {
+                const rankingCtx = document.getElementById('rankingCompetenciasChart').getContext('2d');
+                new Chart(rankingCtx, {
+                    type: 'bar',
                     data: {
-                        labels: competenciasNumericas.map(c => c.nome),
+                        labels: data.ranking_competencias.map(c => c.nome),
                         datasets: [{
-                            label: 'Média das Notas',
-                            data: competenciasNumericas.map(c => c.media),
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            fill: true,
-                            tension: 0.4
+                            label: 'Média (%)',
+                            data: data.ranking_competencias.map(c => c.media),
+                            backgroundColor: data.ranking_competencias.map((_, index) => {
+                                const colors = [
+                                    'rgba(40, 167, 69, 0.8)',   // Verde para melhores
+                                    'rgba(40, 167, 69, 0.7)',
+                                    'rgba(40, 167, 69, 0.6)',
+                                    'rgba(255, 193, 7, 0.8)',   // Amarelo para médios
+                                    'rgba(255, 193, 7, 0.7)',
+                                    'rgba(220, 53, 69, 0.8)',   // Vermelho para piores
+                                    'rgba(220, 53, 69, 0.7)'
+                                ];
+                                return colors[index % colors.length];
+                            }),
+                            borderColor: data.ranking_competencias.map((_, index) => {
+                                const colors = [
+                                    'rgba(40, 167, 69, 1)',
+                                    'rgba(40, 167, 69, 1)',
+                                    'rgba(40, 167, 69, 1)',
+                                    'rgba(255, 193, 7, 1)',
+                                    'rgba(255, 193, 7, 1)',
+                                    'rgba(220, 53, 69, 1)',
+                                    'rgba(220, 53, 69, 1)'
+                                ];
+                                return colors[index % colors.length];
+                            }),
+                            borderWidth: 2,
+                            borderRadius: 6
                         }]
                     },
                     options: {
@@ -305,15 +360,30 @@ document.addEventListener('DOMContentLoaded', function() {
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                max: 100
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
                             }
                         },
                         plugins: {
+                            legend: {
+                                display: false
+                            },
                             tooltip: {
                                 callbacks: {
                                     afterLabel: function(context) {
-                                        const comp = competenciasNumericas[context.dataIndex];
-                                        return `Total de Notas: ${comp.total_notas}`;
+                                        const comp = data.ranking_competencias[context.dataIndex];
+                                        return [
+                                            `Total de Avaliações: ${comp.total_avaliacoes}`,
+                                            `Nota Mínima: ${comp.min_nota}`,
+                                            `Nota Máxima: ${comp.max_nota}`
+                                        ];
                                     }
                                 }
                             }
@@ -322,41 +392,250 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // Gráfico de Distribuição (competências categóricas)
-            const competenciasCategoricas = data.competencias_stats.filter(c => c.tipo === 'Categórica');
-            if (competenciasCategoricas.length > 0) {
-                // Pegar a primeira competência categórica como exemplo
-                const primeiraCateg = competenciasCategoricas[0];
-                const distCtx = document.getElementById('distribuicaoChart').getContext('2d');
-                new Chart(distCtx, {
-                    type: 'pie',
+            // 2. Gráfico de Performance dos Professores (Horizontal)
+            if (data.professores_detalhados && data.professores_detalhados.length > 0) {
+                const profCtx = document.getElementById('professoresChart').getContext('2d');
+                new Chart(profCtx, {
+                    type: 'bar',
                     data: {
-                        labels: Object.keys(primeiraCateg.distribuicao),
+                        labels: data.professores_detalhados.map(p => p.nome),
                         datasets: [{
-                            data: Object.values(primeiraCateg.distribuicao),
-                            backgroundColor: [
-                                'rgba(54, 162, 235, 0.8)',
-                                'rgba(255, 99, 132, 0.8)',
-                                'rgba(255, 206, 86, 0.8)',
-                                'rgba(75, 192, 192, 0.8)'
-                            ]
+                            label: 'Progresso (%)',
+                            data: data.professores_detalhados.map(p => p.progresso_geral),
+                            backgroundColor: data.professores_detalhados.map(p => {
+                                if (p.progresso_geral >= 80) return 'rgba(40, 167, 69, 0.8)';
+                                if (p.progresso_geral >= 60) return 'rgba(255, 193, 7, 0.8)';
+                                if (p.progresso_geral >= 40) return 'rgba(255, 159, 64, 0.8)';
+                                return 'rgba(220, 53, 69, 0.8)';
+                            }),
+                            borderColor: data.professores_detalhados.map(p => {
+                                if (p.progresso_geral >= 80) return 'rgba(40, 167, 69, 1)';
+                                if (p.progresso_geral >= 60) return 'rgba(255, 193, 7, 1)';
+                                if (p.progresso_geral >= 40) return 'rgba(255, 159, 64, 1)';
+                                return 'rgba(220, 53, 69, 1)';
+                            }),
+                            borderWidth: 2,
+                            borderRadius: 6
                         }]
                     },
                     options: {
+                        indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
                         plugins: {
-                            title: {
-                                display: true,
-                                text: primeiraCateg.nome
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const prof = data.professores_detalhados[context.dataIndex];
+                                        return [
+                                            `Turmas: ${prof.turmas.length}`,
+                                            `Alunos: ${prof.total_alunos}`,
+                                            `Notas: ${prof.total_notas_lancadas}/${prof.total_notas_possiveis}`
+                                        ];
+                                    }
+                                }
                             }
                         }
                     }
                 });
             }
+
+            // 3. Gráfico de Competências por Tipo de Turma
+            if (data.competencias_detalhadas && data.competencias_detalhadas.length > 0) {
+                const compTipoCtx = document.getElementById('competenciasPorTipoChart').getContext('2d');
+                
+                // Preparar dados para gráfico de linhas múltiplas
+                const tipos = [...new Set(
+                    data.competencias_detalhadas.flatMap(c => Object.keys(c.por_tipo))
+                )];
+                
+                const datasets = tipos.map((tipo, index) => {
+                    const colors = [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ];
+                    
+                    return {
+                        label: tipo,
+                        data: data.competencias_detalhadas.map(c => 
+                            c.por_tipo[tipo] ? c.por_tipo[tipo].media : null
+                        ),
+                        borderColor: colors[index % colors.length],
+                        backgroundColor: colors[index % colors.length].replace('1)', '0.1)'),
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    };
+                });
+                
+                new Chart(compTipoCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.competencias_detalhadas.map(c => c.nome),
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    afterLabel: function(context) {
+                                        const competencia = data.competencias_detalhadas[context.dataIndex];
+                                        const tipo = datasets[context.datasetIndex].label;
+                                        if (competencia.por_tipo[tipo]) {
+                                            return [
+                                                `Total de Notas: ${competencia.por_tipo[tipo].total_notas}`,
+                                                `Mín: ${competencia.por_tipo[tipo].min} | Máx: ${competencia.por_tipo[tipo].max}`
+                                            ];
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 4. Gráfico de Evolução Temporal
+            if (data.evolucao_temporal && data.evolucao_temporal.length > 0) {
+                const evolucaoCtx = document.getElementById('evolucaoChart').getContext('2d');
+                new Chart(evolucaoCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.evolucao_temporal.map(e => e.data),
+                        datasets: [{
+                            label: 'Notas Lançadas',
+                            data: data.evolucao_temporal.map(e => e.notas_lancadas),
+                            borderColor: 'rgba(102, 126, 234, 1)',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: 'rgba(102, 126, 234, 1)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 5. Detalhes dos Professores (HTML)
+            if (data.professores_detalhados && data.professores_detalhados.length > 0) {
+                const detalhesContainer = document.getElementById('professoresDetalhes');
+                
+                data.professores_detalhados.forEach(professor => {
+                    const professorDiv = document.createElement('div');
+                    professorDiv.className = 'professor-detail';
+                    
+                    const turmasHtml = professor.turmas.map(turma => `
+                        <div class="turma-item">
+                            <span class="turma-nome">${turma.turma}</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${turma.progresso}%"></div>
+                            </div>
+                            <span class="progress-text">${turma.progresso}%</span>
+                        </div>
+                    `).join('');
+                    
+                    professorDiv.innerHTML = `
+                        <div class="professor-name">${professor.nome}</div>
+                        <div class="professor-stats">
+                            <div class="stat-item">
+                                <h4>${professor.total_alunos}</h4>
+                                <p>Alunos</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>${professor.turmas.length}</h4>
+                                <p>Turmas</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>${professor.progresso_geral}%</h4>
+                                <p>Progresso Geral</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>${professor.total_notas_lancadas}</h4>
+                                <p>Notas Lançadas</p>
+                            </div>
+                        </div>
+                        <div class="turma-progress">
+                            <h4 style="margin-bottom: 15px; color: #495057;">Progresso por Turma:</h4>
+                            ${turmasHtml}
+                        </div>
+                    `;
+                    
+                    detalhesContainer.appendChild(professorDiv);
+                });
+            }
         })
         .catch(error => {
             console.error('Erro ao carregar dados:', error);
+            // Mostrar mensagem de erro para o usuário
+            document.querySelector('.dashboard-analytics').innerHTML += `
+                <div style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                    <h3>Erro ao carregar dados</h3>
+                    <p>Não foi possível carregar os dados do dashboard. Tente recarregar a página.</p>
+                </div>
+            `;
         });
 });
 </script>

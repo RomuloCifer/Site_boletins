@@ -592,12 +592,130 @@
     font-size: 0.95em;
     transition: border-color 0.3s ease;
     background-color: white;
+    color: #495057;
 }
 
 .form-control:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Estilos específicos para select */
+select.form-control {
+    color: #212529;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+select.form-control option {
+    color: #212529;
+    background-color: #fff;
+    padding: 8px 12px;
+}
+
+select.form-control:focus {
+    color: #212529;
+    background-color: #fff;
+}
+
+/* Para melhor contraste no placeholder/primeira opção */
+select.form-control option[value=""] {
+    color: #6c757d;
+    font-style: italic;
+}
+
+select.form-control option:not([value=""]) {
+    color: #212529;
+    font-style: normal;
+}
+
+/* Força cores específicas para diferentes estados do select */
+select.form-control:invalid {
+    color: #6c757d; /* Cor quando nenhuma opção válida está selecionada */
+}
+
+select.form-control:valid {
+    color: #212529; /* Cor quando uma opção válida está selecionada */
+}
+
+/* Para navegadores WebKit (Chrome, Safari) */
+select.form-control::-webkit-input-placeholder {
+    color: #6c757d;
+}
+
+/* Para Firefox */
+select.form-control::-moz-placeholder {
+    color: #6c757d;
+    opacity: 1;
+}
+
+/* Estados hover para melhor feedback visual */
+select.form-control:hover {
+    border-color: #b8c6ea;
+    background-color: #f8f9ff;
+}
+
+select.form-control option:hover {
+    background-color: #667eea;
+    color: white;
+}
+
+/* Garantir que o texto seja sempre visível */
+select.form-control,
+select.form-control * {
+    -webkit-text-fill-color: initial !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Adicionar seta customizada para select */
+select.form-control {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 12px;
+    padding-right: 40px;
+}
+
+/* FORÇA MÁXIMA - Garantir contraste perfeito */
+#tipo_nota, #editTipoNota {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+    font-weight: 500;
+}
+
+#tipo_nota option, #editTipoNota option {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+    padding: 8px 12px;
+}
+
+#tipo_nota:focus, #editTipoNota:focus {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+    border-color: #667eea !important;
+}
+
+/* Estilo para opção placeholder */
+#tipo_nota option[value=""], #editTipoNota option[value=""] {
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+/* Para garantir que funcione em todos os navegadores */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    select.form-control {
+        color: #212529;
+    }
+}
+
+@-moz-document url-prefix() {
+    select.form-control {
+        color: #212529;
+        text-shadow: none;
+    }
 }
 
 .form-text {

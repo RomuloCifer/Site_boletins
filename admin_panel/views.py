@@ -448,16 +448,18 @@ def gerenciar_tipos_turma_view(request):
 def dashboard_analytics_data_view(request):
     """View que retorna dados JSON para gráficos do dashboard"""
     
-    # 1. Dados de progresso por tipo de turma
+    # 1. Dados de progresso por tipo de turma (melhorado)
     tipos_progresso = []
     for tipo in TipoTurma.objects.all():
         turmas_do_tipo = Turma.objects.filter(tipo_turma=tipo)
         if turmas_do_tipo.exists():
             total_notas_possiveis = 0
             total_notas_lancadas = 0
+            total_alunos = 0
             
             for turma in turmas_do_tipo:
                 alunos_count = Aluno.objects.filter(turma=turma).count()
+                total_alunos += alunos_count
                 competencias_count = turma.competencias.count() if turma.competencias else 0
                 notas_possiveis = alunos_count * competencias_count
                 
@@ -479,95 +481,178 @@ def dashboard_analytics_data_view(request):
                 'progresso': progresso,
                 'notas_lancadas': total_notas_lancadas,
                 'notas_possiveis': total_notas_possiveis,
-                'turmas_count': turmas_do_tipo.count()
+                'turmas_count': turmas_do_tipo.count(),
+                'alunos_count': total_alunos
             })
-    
-    # 2. Dados de desempenho por competência
-    competencias_stats = []
+
+    # 2. Dados detalhados de competências por unidade/tipo
+    competencias_detalhadas = []
     for competencia in Competencia.objects.all():
-        notas_competencia = LancamentoDeNota.objects.filter(competencia=competencia)
-        total_notas = notas_competencia.count()
+        # Agrupa por tipo de turma
+        tipos_stats = {}
         
-        if total_notas > 0:
-            # Para notas numéricas, calcular média
-            if competencia.tipo_nota == 'NUM':
-                notas_numericas = []
-                for nota in notas_competencia:
-                    try:
-                        valor = float(nota.nota_valor)
-                        notas_numericas.append(valor)
-                    except ValueError:
-                        pass
-                
-                media = sum(notas_numericas) / len(notas_numericas) if notas_numericas else 0
-                
-                competencias_stats.append({
-                    'nome': competencia.nome,
-                    'tipo': 'Numérica',
-                    'total_notas': total_notas,
-                    'media': round(media, 1)
-                })
+        for tipo in TipoTurma.objects.filter(competencias=competencia):
+            turmas_do_tipo = Turma.objects.filter(tipo_turma=tipo)
+            notas_do_tipo = []
             
-            # Para notas categóricas, contar distribuição
-            else:
-                distribuicao = {}
-                for nota in notas_competencia:
-                    valor = nota.nota_valor
-                    distribuicao[valor] = distribuicao.get(valor, 0) + 1
+            for turma in turmas_do_tipo:
+                notas_turma = LancamentoDeNota.objects.filter(
+                    competencia=competencia,
+                    aluno__turma=turma
+                )
                 
-                competencias_stats.append({
-                    'nome': competencia.nome,
-                    'tipo': 'Categórica',
-                    'total_notas': total_notas,
-                    'distribuicao': distribuicao
-                })
-    
-    # 3. Dados de professores e suas turmas
-    professores_stats = []
+                if competencia.tipo_nota == 'NUM':
+                    for nota in notas_turma:
+                        try:
+                            valor = float(nota.nota_valor)
+                            notas_do_tipo.append(valor)
+                        except ValueError:
+                            pass
+            
+            if notas_do_tipo:
+                media = sum(notas_do_tipo) / len(notas_do_tipo)
+                tipos_stats[tipo.nome] = {
+                    'media': round(media, 1),
+                    'total_notas': len(notas_do_tipo),
+                    'min': min(notas_do_tipo),
+                    'max': max(notas_do_tipo)
+                }
+        
+        if tipos_stats:
+            competencias_detalhadas.append({
+                'nome': competencia.nome,
+                'tipo_nota': competencia.tipo_nota,
+                'por_tipo': tipos_stats
+            })
+
+    # 3. Progresso individual dos professores (mais detalhado)
+    professores_detalhados = []
     for professor in Professor.objects.all():
         turmas_prof = Turma.objects.filter(professor_responsavel=professor)
-        total_alunos = sum(Aluno.objects.filter(turma=turma).count() for turma in turmas_prof)
         
-        total_notas_lancadas = 0
-        total_notas_possiveis = 0
-        
-        for turma in turmas_prof:
-            alunos_count = Aluno.objects.filter(turma=turma).count()
-            competencias_count = turma.competencias.count() if turma.competencias else 0
-            notas_possiveis = alunos_count * competencias_count
+        if turmas_prof.exists():
+            progresso_por_turma = []
+            total_notas_lancadas = 0
+            total_notas_possiveis = 0
             
-            if turma.competencias and competencias_count > 0:
-                notas_lancadas = LancamentoDeNota.objects.filter(
-                    aluno__turma=turma,
-                    competencia__in=turma.competencias.all()
-                ).count()
-            else:
-                notas_lancadas = 0
+            for turma in turmas_prof:
+                alunos_count = Aluno.objects.filter(turma=turma).count()
+                competencias_count = turma.competencias.count() if turma.competencias else 0
+                notas_possiveis = alunos_count * competencias_count
+                
+                if turma.competencias and competencias_count > 0:
+                    notas_lancadas = LancamentoDeNota.objects.filter(
+                        aluno__turma=turma,
+                        competencia__in=turma.competencias.all()
+                    ).count()
+                else:
+                    notas_lancadas = 0
+                
+                progresso_turma = int((notas_lancadas / notas_possiveis) * 100) if notas_possiveis > 0 else 0
+                
+                progresso_por_turma.append({
+                    'turma': turma.identificador_turma,
+                    'progresso': progresso_turma,
+                    'alunos': alunos_count,
+                    'notas_lancadas': notas_lancadas,
+                    'notas_possiveis': notas_possiveis
+                })
+                
+                total_notas_lancadas += notas_lancadas
+                total_notas_possiveis += notas_possiveis
             
-            total_notas_possiveis += notas_possiveis
-            total_notas_lancadas += notas_lancadas
+            progresso_geral = int((total_notas_lancadas / total_notas_possiveis) * 100) if total_notas_possiveis > 0 else 0
+            
+            professores_detalhados.append({
+                'nome': professor.user.get_full_name() or professor.user.username,
+                'progresso_geral': progresso_geral,
+                'turmas': progresso_por_turma,
+                'total_alunos': sum(t['alunos'] for t in progresso_por_turma),
+                'total_notas_lancadas': total_notas_lancadas,
+                'total_notas_possiveis': total_notas_possiveis
+            })
+
+    # 4. Análise de desempenho por competência (ranking)
+    ranking_competencias = []
+    for competencia in Competencia.objects.filter(tipo_nota='NUM'):
+        notas = LancamentoDeNota.objects.filter(competencia=competencia)
         
-        progresso = int((total_notas_lancadas / total_notas_possiveis) * 100) if total_notas_possiveis > 0 else 0
-        
-        professores_stats.append({
-            'nome': professor.user.get_full_name() or professor.user.username,
-            'turmas_count': turmas_prof.count(),
-            'alunos_count': total_alunos,
-            'progresso': progresso,
-            'notas_lancadas': total_notas_lancadas,
-            'notas_possiveis': total_notas_possiveis
-        })
+        if notas.exists():
+            notas_numericas = []
+            for nota in notas:
+                try:
+                    valor = float(nota.nota_valor)
+                    notas_numericas.append(valor)
+                except ValueError:
+                    pass
+            
+            if notas_numericas:
+                media = sum(notas_numericas) / len(notas_numericas)
+                ranking_competencias.append({
+                    'nome': competencia.nome,
+                    'media': round(media, 1),
+                    'total_avaliacoes': len(notas_numericas),
+                    'min_nota': min(notas_numericas),
+                    'max_nota': max(notas_numericas)
+                })
     
+    # Ordenar por média decrescente
+    ranking_competencias.sort(key=lambda x: x['media'], reverse=True)
+
+    # 5. Evolução temporal das notas (últimos 30 dias)
+    from datetime import datetime, timedelta
+    
+    try:
+        data_limite = datetime.now() - timedelta(days=30)
+        
+        evolucao_temporal = []
+        notas_recentes = LancamentoDeNota.objects.filter(
+            data_lancamento__gte=data_limite
+        ).order_by('data_lancamento')
+        
+        # Agrupar por semana
+        semanas_stats = {}
+        for nota in notas_recentes:
+            # Calcular número da semana
+            semana = nota.data_lancamento.isocalendar()[1]
+            ano = nota.data_lancamento.year
+            chave_semana = f"{ano}-S{semana}"
+            
+            if chave_semana not in semanas_stats:
+                semanas_stats[chave_semana] = {
+                    'notas_lancadas': 0,
+                    'data': nota.data_lancamento.strftime('%d/%m')
+                }
+            
+            semanas_stats[chave_semana]['notas_lancadas'] += 1
+        
+        evolucao_temporal = [
+            {
+                'periodo': periodo,
+                'notas_lancadas': dados['notas_lancadas'],
+                'data': dados['data']
+            }
+            for periodo, dados in semanas_stats.items()
+        ]
+    except Exception as e:
+        # Se houver erro na evolução temporal, retorna lista vazia
+        evolucao_temporal = []
+
     data = {
         'tipos_progresso': tipos_progresso,
-        'competencias_stats': competencias_stats,
-        'professores_stats': professores_stats,
+        'competencias_detalhadas': competencias_detalhadas,
+        'professores_detalhados': professores_detalhados,
+        'ranking_competencias': ranking_competencias,
+        'evolucao_temporal': evolucao_temporal,
         'resumo': {
             'total_turmas': Turma.objects.count(),
             'total_alunos': Aluno.objects.count(),
             'total_notas': LancamentoDeNota.objects.count(),
             'total_professores': Professor.objects.count(),
-            'total_competencias': Competencia.objects.count()
+            'total_competencias': Competencia.objects.count(),
+            'media_geral': round(
+                sum(item['media'] for item in ranking_competencias) / len(ranking_competencias), 1
+            ) if ranking_competencias else 0
         }
     }
     
