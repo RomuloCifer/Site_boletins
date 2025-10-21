@@ -1,35 +1,435 @@
-{% extends "admin/index.html" %}
-{% load static %}
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
 
-{% block sidebar %}
-    {{ block.super }}
+{% block title %}Dashboard Administrativo | Coordenação Acadêmica{% endblock %}
 
-    <div class="app-admin_panel module">
-        <table>
-            <caption>
-                <a href="{% url 'admin_panel:dashboard' %}" class="section" 
-                   title="Ferramentas Customizadas">
-                   Painel de Coordenação
-                </a>
-            </caption>
-            
-            <tr class="model-group">
-                <th scope="row">
-                    <a href="{% url 'admin_panel:dashboard' %}">
-                        📊 Dashboard Administrativo
-                    </a>
-                </th>
-                <td><a href="{% url 'admin_panel:dashboard' %}" class="addlink">Acessar</a></td>
-            </tr>
-            
-            <tr class="model-group">
-                <th scope="row">
-                    <a href="{% url 'admin_panel:importar_alunos' %}">
-                        📤 Importar Alunos (CSV/Excel)
-                    </a>
-                </th>
-                <td><a href="{% url 'admin_panel:importar_alunos' %}" class="addlink">Importar</a></td>
-            </tr>
-        </table>
+{% block content %}
+<div class="dashboard-header">
+    <h1>
+        <i class="fas fa-chart-line"></i>
+        Dashboard Administrativo
+    </h1>
+    <p class="dashboard-description">
+        Central de controle e gestão do sistema educacional
+    </p>
+</div>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Professores</h3>
+            <p class="stat-number">{{ total_professores|default:"--" }}</p>
+        </div>
     </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Alunos</h3>
+            <p class="stat-number">{{ total_alunos|default:"--" }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-chalkboard"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Turmas</h3>
+            <p class="stat-number">{{ total_turmas|default:"--" }}</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-clipboard-check"></i>
+        </div>
+        <div class="stat-content">
+            <h3>Competências</h3>
+            <p class="stat-number">{{ total_competencias|default:"--" }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="quick-actions">
+    <h2>
+        <i class="fas fa-bolt"></i>
+        Ações Rápidas
+    </h2>
+    
+    <div class="actions-grid">
+        <a href="{% url 'admin_panel:dashboard' %}" class="action-card primary">
+            <div class="action-icon">
+                <i class="fas fa-tachometer-alt"></i>
+            </div>
+            <div class="action-content">
+                <h3>Dashboard Avançado</h3>
+                <p>Visualize estatísticas detalhadas e relatórios</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'admin_panel:importar_alunos' %}" class="action-card secondary">
+            <div class="action-icon">
+                <i class="fas fa-file-upload"></i>
+            </div>
+            <div class="action-content">
+                <h3>Importar Alunos</h3>
+                <p>Upload de planilhas CSV/Excel</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'admin_panel:gerenciar_competencias' %}" class="action-card tertiary">
+            <div class="action-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div class="action-content">
+                <h3>Gerenciar Competências</h3>
+                <p>Configure competências e avaliações</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'admin_panel:analytics' %}" class="action-card quaternary">
+            <div class="action-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <div class="action-content">
+                <h3>Analytics</h3>
+                <p>Relatórios e gráficos interativos</p>
+            </div>
+            <div class="action-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+</div>
+
+{% if app_list %}
+<div class="apps-section">
+    <h2>
+        <i class="fas fa-th-large"></i>
+        Administração do Sistema
+    </h2>
+    
+    <div class="app-list">
+        {% for app in app_list %}
+            <div class="module app-{{ app.app_label }}">
+                <table>
+                    <caption>
+                        <a href="{{ app.app_url }}" class="section">
+                            <i class="fas fa-cube"></i>
+                            {{ app.name }}
+                        </a>
+                    </caption>
+                    {% for model in app.models %}
+                        <tr class="model-{{ model.object_name|lower }}">
+                            {% if model.admin_url %}
+                                <th scope="row">
+                                    <a href="{{ model.admin_url }}">
+                                        <i class="fas fa-database"></i>
+                                        {{ model.name }}
+                                    </a>
+                                </th>
+                            {% else %}
+                                <th scope="row">
+                                    <i class="fas fa-database"></i>
+                                    {{ model.name }}
+                                </th>
+                            {% endif %}
+
+                            <td>
+                                {% if model.add_url %}
+                                    <a href="{{ model.add_url }}" class="addlink">
+                                        <i class="fas fa-plus"></i>
+                                        Adicionar
+                                    </a>
+                                {% endif %}
+                                {% if model.admin_url %}
+                                    <a href="{{ model.admin_url }}" class="changelink">
+                                        <i class="fas fa-edit"></i>
+                                        Alterar
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<style>
+/* Dashboard específico */
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6, #6366f1, #8b5cf6, #a855f7);
+    background-size: 300% 100%;
+    animation: shimmerDashboard 3s ease-in-out infinite;
+}
+
+@keyframes shimmerDashboard {
+    0%, 100% { background-position: 300% 0; }
+    50% { background-position: -300% 0; }
+}
+
+.dashboard-header h1 {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.dashboard-header h1 i {
+    color: #fbbf24 !important;
+    font-size: 2rem !important;
+}
+
+.dashboard-description {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 1.1rem !important;
+    font-weight: 400 !important;
+    margin: 0 !important;
+}
+
+/* Stats cards */
+.dashboard-stats {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+    gap: 1.5rem !important;
+    margin-bottom: 3rem !important;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(15px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 16px !important;
+    padding: 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.stat-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.stat-icon {
+    width: 60px !important;
+    height: 60px !important;
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6) !important;
+    border-radius: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3) !important;
+}
+
+.stat-icon i {
+    color: white !important;
+    font-size: 1.5rem !important;
+}
+
+.stat-content h3 {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 0.25rem 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.stat-number {
+    color: white !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Quick actions */
+.quick-actions {
+    margin-bottom: 3rem !important;
+}
+
+.quick-actions h2 {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.quick-actions h2 i {
+    color: #fbbf24 !important;
+}
+
+.actions-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+    gap: 1.5rem !important;
+}
+
+.action-card {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(15px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 16px !important;
+    padding: 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    text-decoration: none !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.action-card:hover {
+    transform: translateY(-4px) translateX(4px) !important;
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15) !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
+.action-card.primary { border-left: 4px solid #10b981 !important; }
+.action-card.secondary { border-left: 4px solid #3b82f6 !important; }
+.action-card.tertiary { border-left: 4px solid #f59e0b !important; }
+.action-card.quaternary { border-left: 4px solid #8b5cf6 !important; }
+
+.action-icon {
+    width: 50px !important;
+    height: 50px !important;
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6) !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+}
+
+.action-icon i {
+    color: white !important;
+    font-size: 1.25rem !important;
+}
+
+.action-content {
+    flex: 1 !important;
+}
+
+.action-content h3 {
+    color: white !important;
+    font-size: 1.1rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 0.25rem 0 !important;
+}
+
+.action-content p {
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+}
+
+.action-arrow {
+    opacity: 0.6 !important;
+    transition: all 0.2s ease !important;
+}
+
+.action-card:hover .action-arrow {
+    opacity: 1 !important;
+    transform: translateX(4px) !important;
+}
+
+.action-arrow i {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 1rem !important;
+}
+
+/* Apps section */
+.apps-section h2 {
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.apps-section h2 i {
+    color: #fbbf24 !important;
+}
+
+/* Icons para models */
+.model-aluno i,
+.model-turma i,
+.model-professor i,
+.model-nota i,
+.model-competencia i,
+.model-tipoturma i {
+    margin-right: 0.5rem !important;
+    opacity: 0.8 !important;
+}
+
+/* Responsive para dashboard */
+@media (max-width: 768px) {
+    .dashboard-stats {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .stat-card,
+    .action-card {
+        padding: 1rem !important;
+    }
+    
+    .dashboard-header {
+        padding: 1.5rem !important;
+    }
+}
+</style>
 {% endblock %}

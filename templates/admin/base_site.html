@@ -1,0 +1,453 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | Coordenação Acadêmica{% endblock %}
+
+{% block branding %}
+<div class="admin-branding">
+    <h1 id="site-name">
+        <span class="admin-icon">👑</span>
+        Coordenação Acadêmica
+    </h1>
+    <p class="admin-subtitle">Sistema de Gestão Educacional</p>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* Reset e base */
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        background: linear-gradient(135deg, #1a202c 0%, #2d3748 25%, #374151 50%, #4b5563 75%, #6b7280 100%) !important;
+        margin: 0 !important;
+        min-height: 100vh !important;
+        position: relative;
+        color: #f7fafc !important;
+    }
+
+    /* Background animado */
+    body::before {
+        content: '';
+        position: fixed;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.015) 2px, transparent 2px);
+        background-size: 80px 80px;
+        animation: floatAdmin 35s ease-in-out infinite;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    @keyframes floatAdmin {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(20px, -20px) rotate(90deg); }
+        50% { transform: translate(-15px, 15px) rotate(180deg); }
+        75% { transform: translate(15px, -10px) rotate(270deg); }
+    }
+
+    /* Header personalizado */
+    #header {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(25px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+        position: relative !important;
+        z-index: 100 !important;
+    }
+
+    #header::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #374151, #4b5563, #6b7280, #9ca3af, #374151);
+        background-size: 300% 100%;
+        animation: shimmerHeader 5s ease-in-out infinite;
+    }
+
+    @keyframes shimmerHeader {
+        0%, 100% { background-position: 300% 0; }
+        50% { background-position: -300% 0; }
+    }
+
+    .admin-branding {
+        padding: 1.5rem 2rem !important;
+        text-align: left !important;
+        border-bottom: none !important;
+    }
+
+    .admin-branding h1 {
+        color: #f7fafc !important;
+        font-size: 1.75rem !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        letter-spacing: -0.025em !important;
+    }
+
+    .admin-icon {
+        font-size: 2rem !important;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) !important;
+    }
+
+    .admin-subtitle {
+        color: rgba(247, 250, 252, 0.7) !important;
+        font-size: 0.9rem !important;
+        margin: 0.5rem 0 0 3.5rem !important;
+        font-weight: 400 !important;
+        line-height: 1.4 !important;
+    }
+
+    /* Container principal */
+    #container {
+        position: relative !important;
+        z-index: 2 !important;
+        background: transparent !important;
+        min-height: calc(100vh - 120px) !important;
+    }
+
+    /* Content area */
+    #content {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 1rem !important;
+        margin: 1.5rem !important;
+        padding: 2rem !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        text-align: left !important;
+    }
+
+    #content::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmerContent 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmerContent {
+        0%, 100% { transform: translateX(-100%); }
+        50% { transform: translateX(100%); }
+    }
+
+    /* Global text alignment and typography fixes */
+    * {
+        text-align: inherit !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        text-align: left !important;
+        margin-bottom: 1rem !important;
+        line-height: 1.3 !important;
+    }
+
+    p, div, span, label {
+        text-align: left !important;
+        line-height: 1.5 !important;
+    }
+
+    .breadcrumbs {
+        text-align: left !important;
+        padding: 1rem 2rem !important;
+        margin: 0 !important;
+    }
+
+    .module {
+        text-align: left !important;
+    }
+
+    .module h2 {
+        text-align: left !important;
+        padding-left: 1rem !important;
+    }
+
+    .module table {
+        text-align: left !important;
+    }
+
+    .module td, .module th {
+        text-align: left !important;
+        padding: 0.75rem 1rem !important;
+    }
+
+    .dashboard .module {
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Form elements alignment */
+    .form-row {
+        text-align: left !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .form-row label {
+        text-align: left !important;
+        display: block !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .form-row input, .form-row select, .form-row textarea {
+        text-align: left !important;
+    }
+
+    /* Admin specific alignments */
+    .admin-dashboard {
+        text-align: left !important;
+    }
+
+    .admin-dashboard h1 {
+        text-align: left !important;
+        margin-bottom: 2rem !important;
+    }
+
+    /* Títulos */
+    #content h1,
+    .dashboard h1,
+    h1 {
+        color: white !important;
+        font-weight: 700 !important;
+        font-size: 2.2rem !important;
+        margin-bottom: 1.5rem !important;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    /* Cards de aplicações */
+    .app-list {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)) !important;
+        gap: 1.5rem !important;
+        margin-top: 2rem !important;
+    }
+
+    .app-list .module {
+        background: rgba(255, 255, 255, 0.12) !important;
+        backdrop-filter: blur(15px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 16px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    .app-list .module:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15) !important;
+        background: rgba(255, 255, 255, 0.18) !important;
+    }
+
+    .app-list .module caption {
+        color: white !important;
+        font-weight: 600 !important;
+        font-size: 1.25rem !important;
+        text-align: left !important;
+        padding: 0 0 1rem 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+        margin-bottom: 1rem !important;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .app-list .module caption a {
+        color: white !important;
+        text-decoration: none !important;
+    }
+
+    .app-list .module caption a:hover {
+        color: #fbbf24 !important;
+    }
+
+    /* Linhas da tabela */
+    .app-list .module table {
+        width: 100% !important;
+        border-collapse: separate !important;
+        border-spacing: 0 0.5rem !important;
+    }
+
+    .app-list .module tr {
+        background: rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .app-list .module tr:hover {
+        background: rgba(255, 255, 255, 0.15) !important;
+        transform: translateX(4px) !important;
+    }
+
+    .app-list .module th,
+    .app-list .module td {
+        padding: 0.75rem 1rem !important;
+        border: none !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        font-weight: 500 !important;
+    }
+
+    .app-list .module th {
+        text-align: left !important;
+        font-weight: 600 !important;
+    }
+
+    .app-list .module th:first-child {
+        border-radius: 8px 0 0 8px !important;
+    }
+
+    .app-list .module td:last-child {
+        border-radius: 0 8px 8px 0 !important;
+        text-align: right !important;
+    }
+
+    /* Links de ação */
+    .app-list .module a {
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .app-list .module a:hover {
+        color: #fbbf24 !important;
+    }
+
+    .app-list .module .addlink,
+    .app-list .module .changelink,
+    .app-list .module .viewlink {
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6) !important;
+        color: white !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3) !important;
+    }
+
+    .app-list .module .addlink:hover,
+    .app-list .module .changelink:hover,
+    .app-list .module .viewlink:hover {
+        background: linear-gradient(135deg, #1e40af, #3b82f6) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4) !important;
+    }
+
+    /* Sidebar */
+    #nav-sidebar {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 16px !important;
+        margin: 2rem 1rem !important;
+        padding: 1rem !important;
+    }
+
+    #nav-sidebar h2 {
+        color: white !important;
+        font-weight: 600 !important;
+        margin-bottom: 1rem !important;
+    }
+
+    #nav-sidebar a {
+        color: rgba(255, 255, 255, 0.8) !important;
+        padding: 0.5rem !important;
+        border-radius: 6px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    #nav-sidebar a:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+    }
+
+    /* User tools */
+    #user-tools {
+        background: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px) !important;
+        border-radius: 12px !important;
+        padding: 0.75rem 1.5rem !important;
+        margin: 1rem 2rem !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+
+    #user-tools a {
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-decoration: none !important;
+        font-weight: 500 !important;
+        transition: color 0.2s ease !important;
+    }
+
+    #user-tools a:hover {
+        color: #fbbf24 !important;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumbs {
+        background: rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 12px !important;
+        margin: 1rem 2rem !important;
+        padding: 1rem 1.5rem !important;
+        color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .breadcrumbs a {
+        color: rgba(255, 255, 255, 0.9) !important;
+        text-decoration: none !important;
+    }
+
+    .breadcrumbs a:hover {
+        color: #fbbf24 !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .app-list {
+            grid-template-columns: 1fr !important;
+            gap: 1rem !important;
+        }
+
+        #content {
+            margin: 1rem !important;
+            padding: 1.5rem !important;
+        }
+
+        .admin-branding h1 {
+            font-size: 1.5rem !important;
+        }
+    }
+
+    /* Footer */
+    #footer {
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(10px) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: rgba(255, 255, 255, 0.6) !important;
+        text-align: center !important;
+        padding: 1rem !important;
+        margin-top: 2rem !important;
+    }
+</style>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
