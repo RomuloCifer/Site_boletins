@@ -3,9 +3,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required # Garante que apenas administradores acessem
 from django.contrib import messages
 from django.http import JsonResponse
-from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota, TipoTurma
+from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema
 from .decorators import group_required, admin_only, coordinador_or_admin, secretaria_or_above
 import io
+from datetime import date, datetime
 # Create your views here.
 
 @coordinador_or_admin
@@ -665,3 +666,60 @@ def dashboard_analytics_view(request):
         'title': 'Dashboard Analytics'
     }
     return render(request, 'admin_panel/dashboard_analytics.html', context)
+
+
+@coordinador_or_admin
+def configurar_data_limite_view(request):
+    """View para configurar a data limite através de interface gráfica"""
+    
+    # Busca a configuração atual
+    data_limite_atual = ConfiguracaoSistema.get_data_limite_notas()
+    
+    if request.method == 'POST':
+        try:
+            # Recebe os dados do formulário
+            dia = int(request.POST.get('dia'))
+            mes = int(request.POST.get('mes'))
+            ano = int(request.POST.get('ano'))
+            
+            # Valida a data
+            nova_data = date(ano, mes, dia)
+            
+            # Verifica se a data não é no passado
+            if nova_data < date.today():
+                messages.error(request, 'A data limite não pode ser no passado.')
+                return redirect('admin_panel:configurar_data_limite')
+            
+            # Atualiza ou cria a configuração
+            config, created = ConfiguracaoSistema.objects.get_or_create(
+                nome='data_limite_notas',
+                defaults={
+                    'valor': nova_data.isoformat(),
+                    'descricao': 'Data limite para entrega de todas as notas pelos professores'
+                }
+            )
+            
+            if not created:
+                config.valor = nova_data.isoformat()
+                config.save()
+            
+            messages.success(
+                request, 
+                f'Data limite atualizada com sucesso para {nova_data.strftime("%d/%m/%Y")}!'
+            )
+            
+            return redirect('admin_panel:configurar_data_limite')
+            
+        except (ValueError, TypeError) as e:
+            messages.error(request, 'Data inválida. Verifique os valores inseridos.')
+    
+    # Preparar dados para o template
+    ano_atual = date.today().year
+    
+    context = {
+        'data_limite_atual': data_limite_atual,
+        'dias': range(1, 32),  # Dias de 1 a 31
+        'anos': range(ano_atual, ano_atual + 5),  # Próximos 5 anos
+    }
+    
+    return render(request, 'admin_panel/configurar_data_limite.html', context)

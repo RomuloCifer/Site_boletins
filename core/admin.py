@@ -2,7 +2,7 @@ from django.contrib import admin # type: ignore
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin #type: ignore
 from django.contrib.auth.models import User # type: ignore
 
-from .models import Professor, Turma, Aluno, Competencia, LancamentoDeNota, TipoTurma
+from .models import Professor, Turma, Aluno, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema
 
 class ProfessorInline(admin.StackedInline): # Inline para o modelo Professor
     model = Professor # Modelo vinculado
@@ -57,3 +57,18 @@ class LancamentoDeNotaAdmin(admin.ModelAdmin):
     list_display = ('aluno', 'competencia', 'nota_valor') # Campos exibidos na lista
     list_filter = ('competencia',) # Filtros laterais
     search_fields = ('aluno__nome_completo', 'competencia__nome') # Campos pesquisáveis
+
+@admin.register(ConfiguracaoSistema)
+class ConfiguracaoSistemaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'valor', 'descricao', 'data_atualizacao')
+    search_fields = ('nome', 'descricao')
+    readonly_fields = ('data_atualizacao',)
+    
+    fieldsets = (
+        (None, {
+            'fields': ('nome', 'valor', 'descricao')
+        }),
+        ('Informações', {
+            'fields': ('data_atualizacao',)
+        }),
+    )

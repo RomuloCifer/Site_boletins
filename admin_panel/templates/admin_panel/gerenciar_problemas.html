@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Problemas - Sistema de Notas</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0; 
+            padding: 0; 
+            min-height: 100vh;
+        }
+        
+        .header { 
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white; 
+            padding: 2rem; 
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .back-to-dashboard {
+            color: white;
+            text-decoration: none;
+            background: rgba(255,255,255,0.2);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .back-to-dashboard:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .header h1 { 
+            margin: 0; 
+            font-size: 2.5rem; 
+            font-weight: 300;
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        .container { 
+            max-width: 1200px; 
+            margin: 2rem auto; 
+            padding: 0 2rem;
+        }
+        
+        .breadcrumb {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        
+        .breadcrumb a {
+            color: #ffffff;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+        
+        .breadcrumb a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        .problem-section {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .section-icon {
+            font-size: 2rem;
+        }
+        
+        .section-title {
+            flex-grow: 1;
+        }
+        
+        .section-title h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        
+        .section-title p {
+            margin: 0.5rem 0 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .problem-badge {
+            background: #ff4444;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .no-problems {
+            background: #4CAF50;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .duplicate-group {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .duplicate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .duplicate-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .duplicate-count {
+            background: #ff4444;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .students-list {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .student-item {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .student-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .student-info {
+            flex-grow: 1;
+        }
+        
+        .student-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.3rem;
+        }
+        
+        .student-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .student-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .duplicate-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            padding-top: 1rem;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .turmas-afetadas {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .turma-tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.2rem 0.5rem;
+            border-radius: 10px;
+            margin-right: 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        /* Mensagens */
+        .messages {
+            margin-bottom: 2rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .duplicate-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+            
+            .student-item {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .duplicate-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{% url 'admin_panel:dashboard' %}" class="back-to-dashboard">
+            ⬅️ Voltar ao Dashboard
+        </a>
+        
+        <h1>🔧 Gerenciar Problemas</h1>
+        
+        <div style="width: 200px;"></div>
+    </div>
+
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="{% url 'admin_panel:dashboard' %}">📊 Dashboard</a> › 🔧 Gerenciar Problemas
+        </div>
+
+        <!-- Mensagens -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Seção de Alunos Duplicados -->
+        <div class="problem-section">
+            <div class="section-header">
+                <div class="section-icon">👥</div>
+                <div class="section-title">
+                    <h3>Alunos Possivelmente Duplicados</h3>
+                    <p>Alunos com nomes similares que podem ser a mesma pessoa</p>
+                </div>
+                {% if total_duplicados > 0 %}
+                    <div class="problem-badge">{{ total_duplicados }} problema{{ total_duplicados|pluralize }}</div>
+                {% else %}
+                    <div class="no-problems">✅ Nenhum problema</div>
+                {% endif %}
+            </div>
+
+            {% if alunos_duplicados %}
+                {% for grupo in alunos_duplicados %}
+                    <div class="duplicate-group">
+                        <div class="duplicate-header">
+                            <div class="duplicate-name">{{ grupo.nome_normalizado|title }}</div>
+                            <div class="duplicate-count">{{ grupo.quantidade }} aluno{{ grupo.quantidade|pluralize }}</div>
+                        </div>
+
+                        <div class="students-list">
+                            {% for aluno in grupo.alunos %}
+                                <div class="student-item">
+                                    <div class="student-info">
+                                        <div class="student-name">{{ aluno.nome_completo }}</div>
+                                        <div class="student-details">
+                                            <strong>Turma:</strong> {{ aluno.turma.nome|default:"Sem turma" }}
+                                            {% if aluno.matricula %}
+                                                | <strong>Matrícula:</strong> {{ aluno.matricula }}
+                                            {% endif %}
+                                            | <strong>ID:</strong> {{ aluno.id }}
+                                        </div>
+                                    </div>
+                                    <div class="student-actions">
+                                        <a href="/admin/core/aluno/{{ aluno.id }}/change/" class="btn btn-primary" target="_blank">
+                                            📝 Editar
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        {% if grupo.turmas_afetadas %}
+                            <div class="turmas-afetadas">
+                                <strong>Turmas afetadas:</strong>
+                                {% for turma in grupo.turmas_afetadas %}
+                                    <span class="turma-tag">{{ turma }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="duplicate-actions">
+                            <button class="btn btn-warning" onclick="alert('Esta funcionalidade será implementada em breve!')">
+                                ⚠️ Marcar como Não Duplicado
+                            </button>
+                            <button class="btn btn-danger" onclick="alert('Use o botão Editar para gerenciar manualmente os alunos duplicados através do admin do Django.')">
+                                🔄 Mesclar Alunos
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+                    <h4>Nenhum aluno duplicado encontrado!</h4>
+                    <p>Todos os nomes de alunos parecem únicos no sistema.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Seção de Turmas sem Professor -->
+        <div class="problem-section">
+            <div class="section-header">
+                <div class="section-icon">👨‍🏫</div>
+                <div class="section-title">
+                    <h3>Turmas sem Professor</h3>
+                    <p>Turmas que não possuem professor responsável atribuído</p>
+                </div>
+                {% if turmas_sem_professor.count > 0 %}
+                    <div class="problem-badge">{{ turmas_sem_professor.count }} problema{{ turmas_sem_professor.count|pluralize }}</div>
+                {% else %}
+                    <div class="no-problems">✅ Nenhum problema</div>
+                {% endif %}
+            </div>
+
+            {% if turmas_sem_professor %}
+                <div class="students-list">
+                    {% for turma in turmas_sem_professor %}
+                        <div class="student-item">
+                            <div class="student-info">
+                                <div class="student-name">{{ turma.nome }}</div>
+                                <div class="student-details">
+                                    <strong>Identificador:</strong> {{ turma.identificador_turma }}
+                                    | <strong>Tipo:</strong> {{ turma.tipo_turma.nome|default:"Não definido" }}
+                                    | <strong>Alunos:</strong> {{ turma.aluno_set.count }}
+                                </div>
+                            </div>
+                            <div class="student-actions">
+                                <a href="/admin/core/turma/{{ turma.id }}/change/" class="btn btn-primary" target="_blank">
+                                    📝 Atribuir Professor
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+                    <h4>Todas as turmas possuem professor responsável!</h4>
+                    <p>Não há turmas sem professor atribuído.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Seção de Professores sem Turma -->
+        <div class="problem-section">
+            <div class="section-header">
+                <div class="section-icon">📚</div>
+                <div class="section-title">
+                    <h3>Professores sem Turma</h3>
+                    <p>Professores cadastrados que não são responsáveis por nenhuma turma</p>
+                </div>
+                {% if professores_sem_turma.count > 0 %}
+                    <div class="problem-badge">{{ professores_sem_turma.count }} professor{{ professores_sem_turma.count|pluralize:"es" }}</div>
+                {% else %}
+                    <div class="no-problems">✅ Todos atribuídos</div>
+                {% endif %}
+            </div>
+
+            {% if professores_sem_turma %}
+                <div class="students-list">
+                    {% for professor in professores_sem_turma %}
+                        <div class="student-item">
+                            <div class="student-info">
+                                <div class="student-name">
+                                    {{ professor.user.get_full_name|default:professor.user.username }}
+                                </div>
+                                <div class="student-details">
+                                    <strong>Username:</strong> {{ professor.user.username }}
+                                    | <strong>Email:</strong> {{ professor.user.email|default:"Não informado" }}
+                                    | <strong>Ativo:</strong> {% if professor.user.is_active %}Sim{% else %}Não{% endif %}
+                                </div>
+                            </div>
+                            <div class="student-actions">
+                                <a href="/admin/core/professor/{{ professor.id }}/change/" class="btn btn-primary" target="_blank">
+                                    📝 Editar
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+                    <h4>Todos os professores estão atribuídos!</h4>
+                    <p>Não há professores sem turma responsável.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

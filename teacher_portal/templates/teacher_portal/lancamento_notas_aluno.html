@@ -3,66 +3,443 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notas: {{ aluno.nome_completo }}</title>
+    <title>Notas: {{ aluno.nome_completo }} – Portal do Professor</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .header { background: #333; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { margin: 0; font-size: 1.5rem; }
-        .header-nav { display: flex; gap: 1rem; }
-        .nav-link { color: #fff; text-decoration: none; background: #555; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; }
-
-        .container { max-width: 900px; margin: 2rem auto; padding: 2rem; background: #fff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-
-        .form-notas { max-width: 600px; }
-        .form-group { margin-bottom: 1.5rem; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 0.5rem; font-size: 1.1rem; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
-        .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
-        
-        .nota-numerica { 
-            background-color: #f8f9fa; 
-        }
-        .nota-conceitual { 
-            background-color: #e7f3ff; 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .button-row { display: flex; gap: 1rem; margin-top: 2rem; }
-        .button { padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; text-decoration: none; }
-        .button-primary { background: #337ab7; color: white; }
-        .button-primary:hover { background: #286090; }
-        .button-secondary { background: #6c757d; color: white; }
-        .button-secondary:hover { background: #5a6268; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Background animated elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 2px, transparent 2px);
+            background-size: 50px 50px;
+            animation: float 25s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { background-position: 200% 0; }
+            50% { background-position: -200% 0; }
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: -0.5px;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            color: white;
+            text-decoration: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .student-info {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .student-info::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            animation: shimmerTitle 3s ease-in-out infinite;
+        }
+
+        @keyframes shimmerTitle {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        @keyframes slideInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .student-info h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .student-avatar {
+            width: 4rem;
+            height: 4rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: slideInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .form-group {
+            margin-bottom: 2rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .competencia-type {
+            font-size: 0.8rem;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            color: #6b7280;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #f9fafb;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .nota-numerica {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border-color: #0ea5e9;
+        }
+
+        .nota-numerica:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+        }
+
+        .nota-conceitual {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-color: #f59e0b;
+        }
+
+        .nota-conceitual:focus {
+            border-color: #d97706;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+        }
+
+        .button-row {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .button-primary:hover {
+            background: linear-gradient(135deg, #5a67d8, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+            color: white;
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+        }
+
+        .button-secondary:hover {
+            background: linear-gradient(135deg, #4b5563, #6b7280);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4);
+        }
+
+        .validation-message {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: #ef4444;
+            display: none;
+        }
+
+        .input-error {
+            border-color: #ef4444 !important;
+            background: #fef2f2 !important;
+        }
+
+        /* Loading state */
+        .button-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .button-loading::after {
+            content: '';
+            width: 1rem;
+            height: 1rem;
+            margin-left: 0.5rem;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .header {
+                padding: 1rem;
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .button-row {
+                flex-direction: column;
+            }
+
+            .button {
+                min-width: auto;
+            }
+
+            .student-info h3 {
+                font-size: 1.5rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
     </style>
     <script>
-        // Validação adicional para campos numéricos
+        // Validação aprimorada para campos numéricos
         document.addEventListener('DOMContentLoaded', function() {
             const camposNumericos = document.querySelectorAll('.nota-numerica');
+            const form = document.querySelector('.form-notas');
+            const submitButton = document.querySelector('.button-primary');
             
+            // Validação em tempo real
             camposNumericos.forEach(function(campo) {
+                const validationMessage = document.createElement('div');
+                validationMessage.className = 'validation-message';
+                campo.parentNode.appendChild(validationMessage);
+
                 campo.addEventListener('input', function() {
-                    let valor = parseInt(this.value);
+                    let valor = this.value.replace(/[^0-9]/g, '');
+                    this.value = valor;
                     
-                    // Remove caracteres não numéricos
-                    this.value = this.value.replace(/[^0-9]/g, '');
-                    
-                    // Valida se está no range 0-100
-                    if (valor < 0) {
-                        this.value = '0';
-                    } else if (valor > 100) {
-                        this.value = '100';
-                    }
+                    validateField(this, validationMessage);
                 });
                 
-                // Adiciona validação visual
                 campo.addEventListener('blur', function() {
-                    let valor = parseInt(this.value);
-                    if (this.value !== '' && (isNaN(valor) || valor < 0 || valor > 100)) {
-                        this.style.borderColor = '#d9534f';
-                        this.style.backgroundColor = '#f2dede';
-                    } else {
-                        this.style.borderColor = '#ccc';
-                        this.style.backgroundColor = '#f8f9fa';
+                    validateField(this, validationMessage);
+                });
+            });
+
+            function validateField(campo, messageElement) {
+                const valor = parseInt(campo.value);
+                const isValid = campo.value === '' || (valor >= 0 && valor <= 100);
+                
+                if (!isValid) {
+                    campo.classList.add('input-error');
+                    messageElement.textContent = 'A nota deve estar entre 0 e 100';
+                    messageElement.style.display = 'block';
+                } else {
+                    campo.classList.remove('input-error');
+                    messageElement.style.display = 'none';
+                }
+                
+                return isValid;
+            }
+
+            // Validação no envio do formulário
+            form.addEventListener('submit', function(e) {
+                let isFormValid = true;
+                
+                camposNumericos.forEach(function(campo) {
+                    const validationMessage = campo.parentNode.querySelector('.validation-message');
+                    if (!validateField(campo, validationMessage)) {
+                        isFormValid = false;
                     }
+                });
+
+                if (!isFormValid) {
+                    e.preventDefault();
+                    // Scroll para o primeiro campo com erro
+                    const firstError = document.querySelector('.input-error');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                    return;
+                }
+
+                // Adicionar estado de loading
+                submitButton.classList.add('button-loading');
+                submitButton.textContent = 'Salvando...';
+            });
+
+            // Adicionar efeitos de hover nos campos
+            const allInputs = document.querySelectorAll('input, select');
+            allInputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentNode.style.transform = 'translateY(-2px)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentNode.style.transform = 'translateY(0)';
                 });
             });
         });
@@ -71,33 +448,76 @@
 <body>
 
     <div class="header">
-        <a href="{% url 'teacher_portal:lancamento_notas' turma.pk %}" class="nav-link">&larr; Voltar para a Turma</a>
-        <h1>Lançando Notas</h1>
+        <a href="{% url 'teacher_portal:lancamento_notas' turma.pk %}" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+            Voltar para a Turma
+        </a>
+        <h1><i class="fas fa-clipboard-list"></i> Lançando Notas</h1>
     </div>
 
     <div class="container">
-        <h3>Aluno: <strong>{{ aluno.nome_completo }}</strong></h3>
+        <div class="student-info">
+            <div class="student-avatar">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <h3><i class="fas fa-user"></i> {{ aluno.nome_completo }}</h3>
+            <p style="margin-top: 0.5rem; color: rgba(255, 255, 255, 0.8); font-size: 1rem;">
+                Lançamento e edição de notas por competência
+            </p>
+        </div>
 
-        <form method="POST" class="form-notas">
-            {% csrf_token %}
+        <div class="form-container">
+            <form method="POST" class="form-notas">
+                {% csrf_token %}
 
-            {% for item in competencias_com_notas %}
-                <div class="form-group">
-                    <label for="nota-{{ item.competencia.pk }}">
-                        {{ item.competencia.nome }} 
-                        <small>({{ item.competencia.get_tipo_nota_display }})</small>
-                    </label>
-                    
-                    {% if item.competencia.tipo_nota == 'NUM' %}
-                        <!-- Campo numérico para notas de 0-100 -->
-                        <input type="number" 
-                               name="nota-{{ item.competencia.pk }}" 
-                               id="nota-{{ item.competencia.pk }}"
-                               class="nota-numerica"
-                               min="0" 
-                               max="100" 
-                               step="1"
-                               value="{{ item.nota_valor }}" 
+                {% for item in competencias_com_notas %}
+                    <div class="form-group">
+                        <label for="nota-{{ item.competencia.pk }}">
+                            <i class="fas fa-trophy"></i>
+                            {{ item.competencia.nome }}
+                            <span class="competencia-type">{{ item.competencia.get_tipo_nota_display }}</span>
+                        </label>
+                        
+                        {% if item.competencia.tipo_nota == 'NUM' %}
+                            <!-- Campo numérico para notas de 0-100 -->
+                            <input type="number" 
+                                   name="nota-{{ item.competencia.pk }}" 
+                                   id="nota-{{ item.competencia.pk }}"
+                                   class="nota-numerica"
+                                   min="0" 
+                                   max="100" 
+                                   step="1"
+                                   value="{{ item.nota_valor }}" 
+                                   placeholder="Digite uma nota de 0 a 100"
+                                   autocomplete="off">
+                        {% else %}
+                            <!-- Campo conceitual (dropdown) -->
+                            <select name="nota-{{ item.competencia.pk }}" 
+                                    id="nota-{{ item.competencia.pk }}"
+                                    class="nota-conceitual">
+                                <option value="">Selecione um conceito</option>
+                                <option value="I" {% if item.nota_valor == 'I' %}selected{% endif %}>I - Iniciante</option>
+                                <option value="D" {% if item.nota_valor == 'D' %}selected{% endif %}>D - Desenvolvendo</option>
+                                <option value="C" {% if item.nota_valor == 'C' %}selected{% endif %}>C - Consegue</option>
+                                <option value="A" {% if item.nota_valor == 'A' %}selected{% endif %}>A - Avançado</option>
+                            </select>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="button-row">
+                    <button type="submit" class="button button-primary">
+                        <i class="fas fa-save"></i>
+                        Salvar Notas
+                    </button>
+                    <a href="{% url 'teacher_portal:lancamento_notas' turma.pk %}" class="button button-secondary">
+                        <i class="fas fa-times"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
                                placeholder="Digite uma nota de 0 a 100">
                     {% elif item.competencia.tipo_nota == 'ABC' %}
                         <!-- Campo select para notas conceituais A, B, C, D -->

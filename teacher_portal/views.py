@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 # Importa o "segurança" que exige que o usuário esteja logado
 from django.contrib.auth.decorators import login_required
 # Importa o modelo Turma para podermos buscar as turmas
-from core.models import Turma, Aluno, LancamentoDeNota
+from core.models import Turma, Aluno, LancamentoDeNota, ConfiguracaoSistema
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.conf import settings
 import urllib.parse
+from datetime import datetime, date
+import math
 
 
 # Esta é a view do Dashboard que estava faltando
@@ -86,9 +88,54 @@ def dashboard_view(request):
         # (ex: o 'admin' tentou logar aqui), ele não terá o '.professor'
         turmas_com_estatisticas = [] 
 
+    # ===== LÓGICA DA DATA LIMITE =====
+    # Data limite para conclusão das notas (configurável)
+    data_limite = ConfiguracaoSistema.get_data_limite_notas()
+    data_hoje = date.today()
+    
+    # Calcula dias restantes
+    dias_restantes = (data_limite - data_hoje).days
+    
+    # Calcula total de ALUNOS que precisam estar 100% completos
+    total_alunos_pendentes = 0
+    total_alunos_completos = 0
+    total_alunos_geral = 0
+    
+    for turma_info in turmas_com_estatisticas:
+        total_alunos_geral += turma_info['total_alunos']
+        total_alunos_completos += turma_info['alunos_completos']
+    
+    total_alunos_pendentes = total_alunos_geral - total_alunos_completos
+    
+    # Calcula progresso geral baseado em alunos completos
+    progresso_geral = 0
+    if total_alunos_geral > 0:
+        progresso_geral = int((total_alunos_completos / total_alunos_geral) * 100)
+    
+    # Calcula alunos por dia necessários para 100%
+    alunos_por_dia = 0
+    if dias_restantes > 0 and total_alunos_pendentes > 0:
+        alunos_por_dia = math.ceil(total_alunos_pendentes / dias_restantes)
+    
+    # Determina status da deadline
+    deadline_status = 'deadline-good'
+    if dias_restantes <= 5:
+        deadline_status = 'deadline-urgent'
+    elif dias_restantes <= 10:
+        deadline_status = 'deadline-warning'
+
     context = {
         'turmas': turmas_do_professor,
         'turmas_com_estatisticas': turmas_com_estatisticas,
+        # Dados da data limite (nova lógica baseada em alunos)
+        'data_limite': data_limite,
+        'dias_restantes': dias_restantes,
+        'total_alunos_pendentes': total_alunos_pendentes,
+        'alunos_por_dia': alunos_por_dia,
+        'deadline_status': deadline_status,
+        'progresso_geral': progresso_geral,
+        'total_alunos_geral': total_alunos_geral,
+        'total_alunos_completos': total_alunos_completos,
     }
     
     # Renderiza o template do dashboard (que já criamos)

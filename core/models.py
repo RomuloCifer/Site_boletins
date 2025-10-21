@@ -238,3 +238,35 @@ class LancamentoDeNota(models.Model):
         ordering = ['-data_lancamento'] # Ordena por data de lançamento, mais recente primeiro
 
         unique_together = ('aluno', 'competencia') # Garante que um aluno tenha apenas uma nota por competência
+
+
+class ConfiguracaoSistema(models.Model):
+    """
+    Configurações gerais do sistema de notas.
+    """
+    nome = models.CharField(max_length=100, unique=True, verbose_name="Nome da Configuração")
+    valor = models.TextField(verbose_name="Valor")
+    descricao = models.TextField(blank=True, verbose_name="Descrição")
+    data_atualizacao = models.DateTimeField(auto_now=True, verbose_name="Última Atualização")
+    
+    def __str__(self):
+        return f"{self.nome}: {self.valor}"
+    
+    class Meta:
+        verbose_name = "Configuração do Sistema"
+        verbose_name_plural = "Configurações do Sistema"
+        ordering = ['nome']
+    
+    @classmethod
+    def get_data_limite_notas(cls):
+        """
+        Retorna a data limite para entrega de notas.
+        Se não estiver configurada, retorna uma data padrão.
+        """
+        from datetime import date
+        try:
+            config = cls.objects.get(nome='data_limite_notas')
+            return date.fromisoformat(config.valor)
+        except (cls.DoesNotExist, ValueError):
+            # Data padrão: 2 de novembro de 2025
+            return date(2025, 11, 2)
