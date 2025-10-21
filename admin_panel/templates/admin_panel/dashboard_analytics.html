@@ -86,18 +86,18 @@
             <canvas id="professoresChart"></canvas>
         </div>
 
-        <!-- Média das Competências por Tipo de Turma -->
+        <!-- Média Geral por Tipo de Turma -->
         <div class="chart-card chart-large">
-            <h2>🎯 Desempenho por Tipo de Turma</h2>
-            <p class="chart-description">Comparativo de médias entre diferentes tipos de turma</p>
-            <canvas id="competenciasPorTipoChart"></canvas>
+            <h2>� Desempenho por Tipo de Turma</h2>
+            <p class="chart-description">Média geral de notas por tipo de turma/unidade</p>
+            <canvas id="tiposDesempenhoChart"></canvas>
         </div>
 
-        <!-- Evolução Temporal -->
+        <!-- Distribuição de Notas por Faixa -->
         <div class="chart-card chart-large">
-            <h2>📈 Evolução das Avaliações</h2>
-            <p class="chart-description">Quantidade de notas lançadas nas últimas semanas</p>
-            <canvas id="evolucaoChart"></canvas>
+            <h2>📊 Distribuição de Desempenho</h2>
+            <p class="chart-description">Percentual de alunos por faixa de desempenho</p>
+            <canvas id="distribuicaoNotasChart"></canvas>
         </div>
 
         <!-- Detalhes dos Professores -->
@@ -457,43 +457,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            // 3. Gráfico de Competências por Tipo de Turma
-            if (data.competencias_detalhadas && data.competencias_detalhadas.length > 0) {
-                const compTipoCtx = document.getElementById('competenciasPorTipoChart').getContext('2d');
-                
-                // Preparar dados para gráfico de linhas múltiplas
-                const tipos = [...new Set(
-                    data.competencias_detalhadas.flatMap(c => Object.keys(c.por_tipo))
-                )];
-                
-                const datasets = tipos.map((tipo, index) => {
-                    const colors = [
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)'
-                    ];
-                    
-                    return {
-                        label: tipo,
-                        data: data.competencias_detalhadas.map(c => 
-                            c.por_tipo[tipo] ? c.por_tipo[tipo].media : null
-                        ),
-                        borderColor: colors[index % colors.length],
-                        backgroundColor: colors[index % colors.length].replace('1)', '0.1)'),
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
-                    };
-                });
-                
-                new Chart(compTipoCtx, {
-                    type: 'line',
+            // 3. Gráfico de Desempenho por Tipo de Turma (Simplificado)
+            if (data.tipos_desempenho && data.tipos_desempenho.length > 0) {
+                const tiposDesempenhoCtx = document.getElementById('tiposDesempenhoChart').getContext('2d');
+                new Chart(tiposDesempenhoCtx, {
+                    type: 'bar',
                     data: {
-                        labels: data.competencias_detalhadas.map(c => c.nome),
-                        datasets: datasets
+                        labels: data.tipos_desempenho.map(t => t.nome),
+                        datasets: [{
+                            label: 'Média Geral (%)',
+                            data: data.tipos_desempenho.map(t => t.media),
+                            backgroundColor: data.tipos_desempenho.map((tipo, index) => {
+                                // Cores baseadas na performance
+                                if (tipo.media >= 80) return 'rgba(40, 167, 69, 0.8)';      // Verde - Excelente
+                                if (tipo.media >= 70) return 'rgba(23, 162, 184, 0.8)';     // Azul - Bom
+                                if (tipo.media >= 60) return 'rgba(255, 193, 7, 0.8)';      // Amarelo - Regular
+                                if (tipo.media >= 50) return 'rgba(255, 159, 64, 0.8)';     // Laranja - Abaixo da média
+                                return 'rgba(220, 53, 69, 0.8)';                            // Vermelho - Precisa atenção
+                            }),
+                            borderColor: data.tipos_desempenho.map((tipo, index) => {
+                                if (tipo.media >= 80) return 'rgba(40, 167, 69, 1)';
+                                if (tipo.media >= 70) return 'rgba(23, 162, 184, 1)';
+                                if (tipo.media >= 60) return 'rgba(255, 193, 7, 1)';
+                                if (tipo.media >= 50) return 'rgba(255, 159, 64, 1)';
+                                return 'rgba(220, 53, 69, 1)';
+                            }),
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
                     },
                     options: {
                         responsive: true,
@@ -504,64 +496,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 max: 100,
                                 grid: {
                                     color: 'rgba(0,0,0,0.1)'
-                                }
-                            },
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    afterLabel: function(context) {
-                                        const competencia = data.competencias_detalhadas[context.dataIndex];
-                                        const tipo = datasets[context.datasetIndex].label;
-                                        if (competencia.por_tipo[tipo]) {
-                                            return [
-                                                `Total de Notas: ${competencia.por_tipo[tipo].total_notas}`,
-                                                `Mín: ${competencia.por_tipo[tipo].min} | Máx: ${competencia.por_tipo[tipo].max}`
-                                            ];
-                                        }
-                                        return '';
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
                                     }
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            // 4. Gráfico de Evolução Temporal
-            if (data.evolucao_temporal && data.evolucao_temporal.length > 0) {
-                const evolucaoCtx = document.getElementById('evolucaoChart').getContext('2d');
-                new Chart(evolucaoCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.evolucao_temporal.map(e => e.data),
-                        datasets: [{
-                            label: 'Notas Lançadas',
-                            data: data.evolucao_temporal.map(e => e.notas_lancadas),
-                            borderColor: 'rgba(102, 126, 234, 1)',
-                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 6,
-                            pointHoverRadius: 8,
-                            pointBackgroundColor: 'rgba(102, 126, 234, 1)',
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0,0,0,0.1)'
                                 }
                             },
                             x: {
@@ -573,8 +512,84 @@ document.addEventListener('DOMContentLoaded', function() {
                         plugins: {
                             legend: {
                                 display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Média: ${context.parsed.y}%`;
+                                    },
+                                    afterLabel: function(context) {
+                                        const tipo = data.tipos_desempenho[context.dataIndex];
+                                        return [
+                                            `Total de Notas: ${tipo.total_notas}`,
+                                            `Alunos: ${tipo.total_alunos}`,
+                                            `Turmas: ${tipo.turmas_count}`
+                                        ];
+                                    }
+                                }
                             }
                         }
+                    }
+                });
+            }
+
+            // 4. Gráfico de Distribuição de Notas por Faixa
+            if (data.distribuicao_notas) {
+                const distribuicaoCtx = document.getElementById('distribuicaoNotasChart').getContext('2d');
+                new Chart(distribuicaoCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(data.distribuicao_notas),
+                        datasets: [{
+                            data: Object.values(data.distribuicao_notas),
+                            backgroundColor: [
+                                'rgba(220, 53, 69, 0.8)',   // Vermelho para Insuficiente
+                                'rgba(255, 193, 7, 0.8)',   // Amarelo para Regular
+                                'rgba(40, 167, 69, 0.8)',   // Verde para Bom  
+                                'rgba(23, 162, 184, 0.8)'   // Azul para Excelente
+                            ],
+                            borderColor: [
+                                'rgba(220, 53, 69, 1)',
+                                'rgba(255, 193, 7, 1)',
+                                'rgba(40, 167, 69, 1)',
+                                'rgba(23, 162, 184, 1)'
+                            ],
+                            borderWidth: 3,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed;
+                                        return `${label}: ${value}%`;
+                                    },
+                                    afterLabel: function(context) {
+                                        if (data.total_notas_numericas > 0) {
+                                            const percentage = context.parsed;
+                                            const count = Math.round((percentage / 100) * data.total_notas_numericas);
+                                            return `(${count} de ${data.total_notas_numericas} notas)`;
+                                        }
+                                        return '';
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '50%'
                     }
                 });
             }
