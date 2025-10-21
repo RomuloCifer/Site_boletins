@@ -518,39 +518,85 @@
             </form>
         </div>
     </div>
-                               placeholder="Digite uma nota de 0 a 100">
-                    {% elif item.competencia.tipo_nota == 'ABC' %}
-                        <!-- Campo select para notas conceituais A, B, C, D -->
-                        <select name="nota-{{ item.competencia.pk }}" 
-                                id="nota-{{ item.competencia.pk }}"
-                                class="nota-conceitual">
-                            <option value="">-- Selecione um conceito --</option>
-                            <option value="A" {% if item.nota_valor == 'A' %}selected{% endif %}>A - Excelente</option>
-                            <option value="B" {% if item.nota_valor == 'B' %}selected{% endif %}>B - Bom</option>
-                            <option value="C" {% if item.nota_valor == 'C' %}selected{% endif %}>C - Regular</option>
-                            <option value="D" {% if item.nota_valor == 'D' %}selected{% endif %}>D - Insuficiente</option>
-                        </select>
-                    {% else %}
-                        <!-- Fallback para outros tipos (caso existam no futuro) -->
-                        <input type="text" 
-                               name="nota-{{ item.competencia.pk }}" 
-                               id="nota-{{ item.competencia.pk }}"
-                               value="{{ item.nota_valor }}" 
-                               placeholder="Digite a nota">
-                    {% endif %}
-                </div>
-            {% endfor %}
 
-            <div class="button-row">
-                <button type="submit" name="acao" value="salvar_proximo" class="button button-primary">
-                    Salvar e Próximo &rarr;
-                </button>
-                <button type="submit" name="acao" value="salvar_voltar" class="button button-secondary">
-                    Salvar e Voltar
-                </button>
-            </div>
-        </form>
-    </div>
+    <script>
+        // Validação aprimorada para campos numéricos
+        document.addEventListener('DOMContentLoaded', function() {
+            const camposNumericos = document.querySelectorAll('.nota-numerica');
+            const form = document.querySelector('.form-notas');
+            const submitButton = document.querySelector('.button-primary');
+            
+            // Validação em tempo real
+            camposNumericos.forEach(function(campo) {
+                const validationMessage = document.createElement('div');
+                validationMessage.className = 'validation-message';
+                campo.parentNode.appendChild(validationMessage);
 
-</body>
-</html>
+                campo.addEventListener('input', function() {
+                    let valor = this.value.replace(/[^0-9]/g, '');
+                    this.value = valor;
+                    
+                    validateField(this, validationMessage);
+                });
+                
+                campo.addEventListener('blur', function() {
+                    validateField(this, validationMessage);
+                });
+            });
+
+            function validateField(campo, messageElement) {
+                const valor = parseInt(campo.value);
+                const isValid = campo.value === '' || (valor >= 0 && valor <= 100);
+                
+                if (!isValid) {
+                    campo.classList.add('input-error');
+                    messageElement.textContent = 'A nota deve estar entre 0 e 100';
+                    messageElement.style.display = 'block';
+                } else {
+                    campo.classList.remove('input-error');
+                    messageElement.style.display = 'none';
+                }
+                
+                return isValid;
+            }
+
+            // Validação no envio do formulário
+            form.addEventListener('submit', function(e) {
+                let isFormValid = true;
+                
+                camposNumericos.forEach(function(campo) {
+                    const validationMessage = campo.parentNode.querySelector('.validation-message');
+                    if (!validateField(campo, validationMessage)) {
+                        isFormValid = false;
+                    }
+                });
+
+                if (!isFormValid) {
+                    e.preventDefault();
+                    // Scroll para o primeiro campo com erro
+                    const firstError = document.querySelector('.input-error');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                    return;
+                }
+
+                // Adicionar estado de loading
+                submitButton.classList.add('button-loading');
+                submitButton.textContent = 'Salvando...';
+            });
+
+            // Adicionar efeitos de hover nos campos
+            const allInputs = document.querySelectorAll('input, select');
+            allInputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentNode.style.transform = 'translateY(-2px)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentNode.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
