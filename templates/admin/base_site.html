@@ -13,6 +13,16 @@
 </div>
 {% endblock %}
 
+{% block usertools %}
+<div id="user-tools">
+    {% if user.is_authenticated %}
+        Bem-vindo, <strong>{{ user.get_full_name|default:user.username }}</strong>.
+        <a href="{% url 'admin:password_change' %}">Alterar senha</a> / 
+        <a href="{% url 'admin:logout' %}">Sair</a>
+    {% endif %}
+</div>
+{% endblock %}
+
 {% block extrahead %}
 {{ block.super }}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
