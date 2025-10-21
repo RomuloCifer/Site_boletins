@@ -5,49 +5,66 @@
 
 {% block content %}
 <div class="dashboard-admin">
-    <h1>{{ title }}</h1>
+    <div class="header-section">
+        <h1>{{ title }}</h1>
+        <div class="stats-info">
+            <span class="badge badge-info">Total: {{ total_competencias }} competência{{ total_competencias|pluralize:"s" }}</span>
+        </div>
+    </div>
     
     <!-- Mensagens -->
     {% if messages %}
         {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
+            <div class="alert alert-{{ message.tags }} alert-dismissible">
+                <button type="button" class="close" onclick="this.parentElement.style.display='none'">&times;</button>
                 {{ message }}
             </div>
         {% endfor %}
     {% endif %}
     
     <!-- Formulário para criar nova competência -->
-    <div class="card mb-4">
+    <div class="card mb-4 create-form">
         <div class="card-header">
-            <h3>Criar Nova Competência</h3>
+            <h3><i class="icon-plus"></i> Criar Nova Competência</h3>
+            <small class="text-muted">Adicione uma nova competência para ser usada nas avaliações</small>
         </div>
         <div class="card-body">
-            <form method="post">
+            <form method="post" id="createForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create">
                 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                         <div class="form-group">
-                            <label for="nome">Nome da Competência:</label>
-                            <input type="text" class="form-control" id="nome" name="nome" required>
+                            <label for="nome">Nome da Competência <span class="required">*</span></label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="nome" 
+                                   name="nome" 
+                                   placeholder="Ex: Comunicação Oral"
+                                   minlength="3"
+                                   maxlength="100"
+                                   required>
+                            <small class="form-text">Mínimo 3 caracteres</small>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="form-group">
-                            <label for="tipo_nota">Tipo de Nota:</label>
+                            <label for="tipo_nota">Tipo de Nota <span class="required">*</span></label>
                             <select class="form-control" id="tipo_nota" name="tipo_nota" required>
-                                <option value="">Selecione...</option>
+                                <option value="">Selecione o tipo...</option>
                                 {% for choice_key, choice_label in tipo_nota_choices %}
                                     <option value="{{ choice_key }}">{{ choice_label }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <div class="form-group">
                             <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-success form-control">Criar</button>
+                            <button type="submit" class="btn btn-success btn-create">
+                                <i class="icon-plus"></i> Criar Competência
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -56,56 +73,138 @@
     </div>
     
     <!-- Lista de competências existentes -->
-    <div class="card">
+    <div class="card competencias-list">
         <div class="card-header">
-            <h3>Competências Cadastradas ({{ competencias|length }})</h3>
+            <h3><i class="icon-list"></i> Competências Cadastradas</h3>
+            <div class="header-actions">
+                {% if competencias_info %}
+                    <button class="btn btn-outline btn-sm" onclick="toggleEditMode()">
+                        <i class="icon-edit"></i> <span id="editModeText">Modo Edição</span>
+                    </button>
+                {% endif %}
+            </div>
         </div>
         <div class="card-body">
-            {% if competencias %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Nome</th>
-                                <th>Tipo de Nota</th>
-                                <th>Tipos de Turma que Usam</th>
-                                <th>Notas Lançadas</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for competencia in competencias %}
-                                <tr>
-                                    <td>{{ competencia.nome }}</td>
-                                    <td>{{ competencia.get_tipo_nota_display }}</td>
-                                    <td>
-                                        {% if competencia.tipos_turma.all %}
-                                            {{ competencia.tipos_turma.count }} tipo(s)
-                                            <small class="text-muted">
-                                                ({% for tipo in competencia.tipos_turma.all %}{{ tipo.nome }}{% if not forloop.last %}, {% endif %}{% endfor %})
-                                            </small>
+            {% if competencias_info %}
+                <div class="competencias-grid">
+                    {% for item in competencias_info %}
+                        <div class="competencia-card" data-id="{{ item.competencia.id }}">
+                            <div class="competencia-header">
+                                <div class="competencia-info">
+                                    <h4 class="competencia-nome">{{ item.competencia.nome }}</h4>
+                                    <span class="badge badge-tipo badge-{{ item.competencia.tipo_nota|lower }}">
+                                        {{ item.competencia.get_tipo_nota_display }}
+                                    </span>
+                                </div>
+                                <div class="competencia-actions">
+                                    <button class="btn btn-icon btn-edit edit-btn" 
+                                            onclick="editarCompetencia('{{ item.competencia.id }}', '{{ item.competencia.nome|escapejs }}', '{{ item.competencia.tipo_nota }}')"
+                                            title="Editar competência">
+                                        <i class="icon-edit"></i>
+                                    </button>
+                                    <button class="btn btn-icon btn-danger delete-btn" 
+                                            onclick="confirmarDelecao('{{ item.competencia.id }}', '{{ item.competencia.nome|escapejs }}', '{{ item.tipos_turma_count }}', '{{ item.notas_count }}')"
+                                            title="Deletar competência"
+                                            {% if not item.pode_deletar %}data-warning="true"{% endif %}>
+                                        <i class="icon-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="competencia-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Tipos de Turma:</span>
+                                    <span class="stat-value">
+                                        {% if item.tipos_turma_count > 0 %}
+                                            {{ item.tipos_turma_count }}
+                                            {% if item.tipos_turma_nomes %}
+                                                <small class="text-muted">
+                                                    ({{ item.tipos_turma_nomes|join:", " }}{% if item.tipos_turma_count > 3 %}...{% endif %})
+                                                </small>
+                                            {% endif %}
                                         {% else %}
                                             <span class="text-muted">Nenhum</span>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        {{ competencia.lancamentos_de_nota.count }} nota(s)
-                                    </td>
-                                    <td>
-                                        <button type="button" 
-                                                class="btn btn-danger btn-sm" 
-                                                onclick="confirmarDelecao('{{ competencia.id }}', '{{ competencia.nome }}', '{{ competencia.tipos_turma.count }}', '{{ competencia.lancamentos_de_nota.count }}')">
-                                            Deletar
-                                        </button>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                    </span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Notas Lançadas:</span>
+                                    <span class="stat-value">
+                                        {{ item.notas_count }}
+                                        {% if item.notas_count > 0 %}
+                                            <i class="icon-warning text-warning" title="Esta competência possui notas lançadas"></i>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            {% if not item.pode_deletar %}
+                                <div class="competencia-warning">
+                                    <i class="icon-warning"></i>
+                                    <small>Em uso - deletion requer confirmação</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                 </div>
             {% else %}
-                <p class="text-muted">Nenhuma competência cadastrada ainda.</p>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="icon-folder-empty"></i>
+                    </div>
+                    <h3>Nenhuma competência cadastrada</h3>
+                    <p class="text-muted">Crie sua primeira competência usando o formulário acima.</p>
+                </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal de edição -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Competência</h5>
+                <button type="button" class="close" onclick="fecharModal('editModal')">&times;</button>
+            </div>
+            <form id="editForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="competencia_id" id="editCompetenciaId">
+                    
+                    <div class="form-group">
+                        <label for="editNome">Nome da Competência <span class="required">*</span></label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="editNome" 
+                               name="nome" 
+                               minlength="3"
+                               maxlength="100"
+                               required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editTipoNota">Tipo de Nota <span class="required">*</span></label>
+                        <select class="form-control" id="editTipoNota" name="tipo_nota" required>
+                            {% for choice_key, choice_label in tipo_nota_choices %}
+                                <option value="{{ choice_key }}">{{ choice_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div id="editWarning" class="alert alert-warning" style="display: none;">
+                        <i class="icon-warning"></i>
+                        <strong>Atenção:</strong> Esta competência possui notas lançadas. 
+                        Alterar o tipo de nota pode afetar a exibição das notas existentes.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="fecharModal('editModal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -116,26 +215,37 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Confirmar Exclusão</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <button type="button" class="close" onclick="fecharModal('deleteModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Tem certeza que deseja deletar a competência <strong id="competenciaNome"></strong>?</p>
-                <div id="avisoUso" class="alert alert-warning" style="display: none;">
-                    <p><strong>Atenção:</strong> Esta competência está sendo usada:</p>
-                    <ul>
-                        <li id="tiposInfo"></li>
-                        <li id="notasInfo"></li>
-                    </ul>
-                    <p>Ao deletar esta competência, todas as notas associadas também serão removidas!</p>
+                <div class="delete-confirmation">
+                    <div class="delete-icon">
+                        <i class="icon-trash"></i>
+                    </div>
+                    <h4>Deletar Competência</h4>
+                    <p>Tem certeza que deseja deletar a competência <strong id="competenciaNome"></strong>?</p>
+                    
+                    <div id="avisoUso" class="alert alert-danger" style="display: none;">
+                        <p><strong><i class="icon-warning"></i> Atenção:</strong> Esta competência está sendo usada:</p>
+                        <ul>
+                            <li id="tiposInfo"></li>
+                            <li id="notasInfo"></li>
+                        </ul>
+                        <p class="text-danger"><strong>Ao deletar esta competência, todas as notas e associações serão permanentemente removidas!</strong></p>
+                        <p>Esta ação não pode ser desfeita.</p>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-secondary" onclick="fecharModal('deleteModal')">Cancelar</button>
                 <form id="deleteForm" method="post" style="display: inline;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="delete">
                     <input type="hidden" name="competencia_id" id="competenciaId">
-                    <button type="submit" class="btn btn-danger">Sim, Deletar</button>
+                    <input type="hidden" name="force_delete" id="forceDelete" value="true">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="icon-trash"></i> Sim, Deletar
+                    </button>
                 </form>
             </div>
         </div>
@@ -143,37 +253,529 @@
 </div>
 
 <style>
+/* Layout e estrutura geral */
+.dashboard-admin {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.header-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header-section h1 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 2.2em;
+}
+
+.stats-info {
+    display: flex;
+    gap: 10px;
+}
+
+/* Cards */
 .card {
-    border: 1px solid #ddd;
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-header small {
+    opacity: 0.8;
+    display: block;
+    margin-top: 5px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+/* Formulário de criação */
+.create-form .card-header {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+/* Badges */
+.badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge-tipo {
+    font-size: 0.8em;
+    padding: 4px 8px;
+}
+
+.badge-num {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-abc {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+/* Alertas */
+.alert {
+    padding: 15px;
     border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid transparent;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.alert-dismissible {
+    padding-right: 40px;
+    position: relative;
+}
+
+.alert .close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.alert .close:hover {
+    opacity: 1;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+/* Grid de competências */
+.competencias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.competencia-card {
+    background: white;
+    border: 1px solid #e1e5e9;
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.competencia-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+
+.competencia-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.competencia-info h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 1.2em;
+    line-height: 1.3;
+}
+
+.competencia-actions {
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.competencia-card:hover .competencia-actions {
+    opacity: 1;
+}
+
+.competencia-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.stat:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.stat-value {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.competencia-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    font-size: 0.85em;
+    color: #856404;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Botões */
+.btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+}
+
+.btn-outline:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.btn-icon {
+    padding: 8px;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    justify-content: center;
+}
+
+.btn-edit {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-create {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+}
+
+/* Formulários */
+.form-group {
     margin-bottom: 20px;
 }
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #ddd;
-    padding: 15px;
-    border-radius: 8px 8px 0 0;
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #495057;
 }
-.card-body {
-    padding: 15px;
+
+.required {
+    color: #dc3545;
 }
-.alert {
-    padding: 10px;
-    border-radius: 4px;
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: border-color 0.3s ease;
+    background-color: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-text {
+    font-size: 0.8em;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Estado vazio */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+}
+
+.empty-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+    opacity: 0.3;
+}
+
+.empty-state h3 {
     margin-bottom: 10px;
+    color: #495057;
 }
-.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-.alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-.alert-warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
-.table { margin-bottom: 0; }
-.btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; }
-.btn-success { background-color: #28a745; color: white; }
-.btn-danger { background-color: #dc3545; color: white; }
-.btn-secondary { background-color: #6c757d; color: white; }
-.form-control { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-dialog {
+    max-width: 500px;
+    width: 90%;
+    margin: auto;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 20px 25px 15px;
+    border-bottom: 1px solid #e1e5e9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.3em;
+    color: #2c3e50;
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.modal-footer {
+    padding: 15px 25px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.delete-confirmation {
+    text-align: center;
+}
+
+.delete-icon {
+    font-size: 3em;
+    color: #dc3545;
+    margin-bottom: 15px;
+}
+
+/* Ícones simulados */
+.icon-plus::before { content: "➕"; }
+.icon-edit::before { content: "✏️"; }
+.icon-trash::before { content: "🗑️"; }
+.icon-list::before { content: "📋"; }
+.icon-warning::before { content: "⚠️"; }
+.icon-folder-empty::before { content: "📁"; }
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .competencias-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .header-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .competencia-actions {
+        opacity: 1;
+    }
+}
+
+/* Modo de edição */
+body.edit-mode .edit-btn {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+body.edit-mode .competencia-card {
+    border-color: #667eea;
+    background-color: #f8f9ff;
+}
+
+.text-muted {
+    color: #6c757d;
+}
+
+.text-warning {
+    color: #856404;
+}
+
+.text-danger {
+    color: #dc3545;
+}
 </style>
 
 <script>
+// Estado global
+let editMode = false;
+
+// Função para alternar modo de edição
+function toggleEditMode() {
+    editMode = !editMode;
+    document.body.classList.toggle('edit-mode', editMode);
+    
+    const editModeText = document.getElementById('editModeText');
+    if (editMode) {
+        editModeText.textContent = 'Sair do Modo Edição';
+    } else {
+        editModeText.textContent = 'Modo Edição';
+    }
+}
+
+// Função para editar competência
+function editarCompetencia(id, nome, tipoNota) {
+    document.getElementById('editCompetenciaId').value = id;
+    document.getElementById('editNome').value = nome;
+    document.getElementById('editTipoNota').value = tipoNota;
+    
+    // Verificar se tem notas lançadas (simulado - você pode buscar via AJAX)
+    // Por ora, assumimos que se está editando, pode ter notas
+    const warning = document.getElementById('editWarning');
+    // warning.style.display = 'block'; // Descomente se quiser sempre mostrar o aviso
+    
+    mostrarModal('editModal');
+}
+
+// Função para confirmar deleção
 function confirmarDelecao(id, nome, tiposCount, notasCount) {
     document.getElementById('competenciaId').value = id;
     document.getElementById('competenciaNome').textContent = nome;
@@ -190,34 +792,155 @@ function confirmarDelecao(id, nome, tiposCount, notasCount) {
         avisoUso.style.display = 'none';
     }
     
-    $('#deleteModal').modal('show');
+    mostrarModal('deleteModal');
 }
 
-// Simular Bootstrap modal se não estiver disponível
-if (typeof $ === 'undefined' || !$.fn.modal) {
-    function showModal(modalId) {
-        document.getElementById(modalId).style.display = 'block';
-    }
-    function hideModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
+// Funções de modal customizadas
+function mostrarModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'flex';
+    modal.classList.add('show');
     
-    // Substituir chamadas do modal
-    window.$ = {
-        fn: {
-            modal: function(action) {
-                if (action === 'show') {
-                    this[0].style.display = 'block';
-                }
-            }
+    // Adicionar evento para fechar ao clicar fora
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            fecharModal(modalId);
         }
-    };
-    
-    // Função para substituir o modal do Bootstrap
-    function $(selector) {
-        return [document.querySelector(selector)];
-    }
+    });
 }
+
+function fecharModal(modalId) {
+    const modal = document.getElementById(modalId);
+    modal.style.display = 'none';
+    modal.classList.remove('show');
+}
+
+// Validação do formulário de criação
+document.getElementById('createForm').addEventListener('submit', function(e) {
+    const nome = document.getElementById('nome').value.trim();
+    const tipoNota = document.getElementById('tipo_nota').value;
+    
+    if (!nome || nome.length < 3) {
+        e.preventDefault();
+        alert('O nome da competência deve ter pelo menos 3 caracteres.');
+        return;
+    }
+    
+    if (!tipoNota) {
+        e.preventDefault();
+        alert('Por favor, selecione um tipo de nota.');
+        return;
+    }
+});
+
+// Validação do formulário de edição
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    const nome = document.getElementById('editNome').value.trim();
+    const tipoNota = document.getElementById('editTipoNota').value;
+    
+    if (!nome || nome.length < 3) {
+        e.preventDefault();
+        alert('O nome da competência deve ter pelo menos 3 caracteres.');
+        return;
+    }
+    
+    if (!tipoNota) {
+        e.preventDefault();
+        alert('Por favor, selecione um tipo de nota.');
+        return;
+    }
+});
+
+// Fechar alertas automaticamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-fechar alertas de sucesso após 5 segundos
+    const successAlerts = document.querySelectorAll('.alert-success');
+    successAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.opacity = '0';
+            setTimeout(function() {
+                alert.style.display = 'none';
+            }, 300);
+        }, 5000);
+    });
+    
+    // Foco no primeiro campo ao abrir modais
+    document.getElementById('editModal').addEventListener('shown', function() {
+        document.getElementById('editNome').focus();
+    });
+});
+
+// Teclas de atalho
+document.addEventListener('keydown', function(e) {
+    // ESC para fechar modais
+    if (e.key === 'Escape') {
+        const modals = document.querySelectorAll('.modal.show');
+        modals.forEach(function(modal) {
+            fecharModal(modal.id);
+        });
+    }
+    
+    // Ctrl + E para alternar modo de edição
+    if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault();
+        toggleEditMode();
+    }
+});
+
+// Feedback visual para ações
+function showFeedback(message, type = 'success') {
+    const feedback = document.createElement('div');
+    feedback.className = `alert alert-${type} feedback-toast`;
+    feedback.textContent = message;
+    
+    feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 250px;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        feedback.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+            document.body.removeChild(feedback);
+        }, 300);
+    }, 3000);
+}
+
+// CSS para animações
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+    
+    .feedback-toast {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+`;
+document.head.appendChild(style);
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Painel de competências carregado com sucesso!');
+    
+    // Verificar se há competências e mostrar dica
+    const competenciasCount = document.querySelectorAll('.competencia-card').length;
+    if (competenciasCount === 0) {
+        console.log('Nenhuma competência cadastrada. Crie sua primeira competência!');
+    }
+});
 </script>
 
 {% endblock %}

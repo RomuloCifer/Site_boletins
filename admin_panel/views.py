@@ -262,17 +262,25 @@ def importar_alunos_view(request):
 
 @coordinador_or_admin
 def gerenciar_competencias_view(request):
-    """View para gerenciar competências - listar, criar e deletar"""
+    """View para gerenciar competências - listar, criar, editar e deletar"""
     competencias = Competencia.objects.all().order_by('nome')
     
     if request.method == 'POST':
         action = request.POST.get('action')
         
         if action == 'create':
-            nome = request.POST.get('nome')
+            nome = request.POST.get('nome', '').strip()
             tipo_nota = request.POST.get('tipo_nota')
             
-            if nome and tipo_nota:
+            if not nome:
+                messages.error(request, 'O nome da competência é obrigatório.')
+            elif len(nome) < 3:
+                messages.error(request, 'O nome da competência deve ter pelo menos 3 caracteres.')
+            elif not tipo_nota:
+                messages.error(request, 'O tipo de nota é obrigatório.')
+            elif Competencia.objects.filter(nome__iexact=nome).exists():
+                messages.error(request, f'Já existe uma competência com o nome "{nome}".')
+            else:
                 try:
                     competencia = Competencia.objects.create(
                         nome=nome,
@@ -281,23 +289,70 @@ def gerenciar_competencias_view(request):
                     messages.success(request, f'Competência "{competencia.nome}" criada com sucesso!')
                 except Exception as e:
                     messages.error(request, f'Erro ao criar competência: {str(e)}')
-            else:
-                messages.error(request, 'Nome e tipo de nota são obrigatórios.')
+        
+        elif action == 'edit':
+            competencia_id = request.POST.get('competencia_id')
+            nome = request.POST.get('nome', '').strip()
+            tipo_nota = request.POST.get('tipo_nota')
+            
+            try:
+                competencia = get_object_or_404(Competencia, id=competencia_id)
+                
+                if not nome:
+                    messages.error(request, 'O nome da competência é obrigatório.')
+                elif len(nome) < 3:
+                    messages.error(request, 'O nome da competência deve ter pelo menos 3 caracteres.')
+                elif not tipo_nota:
+                    messages.error(request, 'O tipo de nota é obrigatório.')
+                elif Competencia.objects.filter(nome__iexact=nome).exclude(id=competencia_id).exists():
+                    messages.error(request, f'Já existe uma competência com o nome "{nome}".')
+                else:
+                    # Verificar se tem notas lançadas antes de alterar tipo
+                    notas_existentes = LancamentoDeNota.objects.filter(competencia=competencia).count()
+                    if notas_existentes > 0 and competencia.tipo_nota != tipo_nota:
+                        messages.warning(
+                            request,
+                            f'Atenção: A competência "{competencia.nome}" possui {notas_existentes} nota(s) lançada(s). '
+                            f'Alterar o tipo de nota pode afetar a exibição das notas existentes.'
+                        )
+                    
+                    nome_anterior = competencia.nome
+                    competencia.nome = nome
+                    competencia.tipo_nota = tipo_nota
+                    competencia.save()
+                    
+                    if nome_anterior != nome:
+                        messages.success(request, f'Competência "{nome_anterior}" foi renomeada para "{nome}" e atualizada com sucesso!')
+                    else:
+                        messages.success(request, f'Competência "{nome}" atualizada com sucesso!')
+                        
+            except Exception as e:
+                messages.error(request, f'Erro ao editar competência: {str(e)}')
         
         elif action == 'delete':
             competencia_id = request.POST.get('competencia_id')
+            force_delete = request.POST.get('force_delete') == 'true'
+            
             try:
                 competencia = get_object_or_404(Competencia, id=competencia_id)
                 
                 # Verificar se a competência está sendo usada
-                tipos_turma_usando = TipoTurma.objects.filter(competencias=competencia).count()
+                tipos_turma_usando = TipoTurma.objects.filter(competencias=competencia)
                 notas_existentes = LancamentoDeNota.objects.filter(competencia=competencia).count()
                 
-                if tipos_turma_usando > 0 or notas_existentes > 0:
+                if (tipos_turma_usando.count() > 0 or notas_existentes > 0) and not force_delete:
+                    # Preparar informações detalhadas para o modal de confirmação
+                    tipos_info = list(tipos_turma_usando.values_list('nome', flat=True))
+                    context_info = {
+                        'tipos_turma': tipos_info,
+                        'quantidade_tipos': tipos_turma_usando.count(),
+                        'notas_existentes': notas_existentes
+                    }
+                    
                     messages.warning(
                         request, 
-                        f'A competência "{competencia.nome}" está sendo usada em {tipos_turma_usando} tipo(s) de turma '
-                        f'e tem {notas_existentes} nota(s) lançada(s). Tem certeza que deseja deletar?'
+                        f'A competência "{competencia.nome}" está sendo usada em {tipos_turma_usando.count()} tipo(s) de turma '
+                        f'e possui {notas_existentes} nota(s) lançada(s). Esta ação não pode ser desfeita!'
                     )
                 else:
                     nome_competencia = competencia.nome
@@ -309,9 +364,26 @@ def gerenciar_competencias_view(request):
         
         return redirect('admin_panel:gerenciar_competencias')
     
+    # Preparar informações adicionais sobre cada competência
+    competencias_info = []
+    for competencia in competencias:
+        tipos_turma = TipoTurma.objects.filter(competencias=competencia)
+        notas_count = LancamentoDeNota.objects.filter(competencia=competencia).count()
+        
+        competencias_info.append({
+            'competencia': competencia,
+            'tipos_turma': tipos_turma,
+            'tipos_turma_count': tipos_turma.count(),
+            'notas_count': notas_count,
+            'pode_deletar': tipos_turma.count() == 0 and notas_count == 0,
+            'tipos_turma_nomes': [tipo.nome for tipo in tipos_turma[:3]]  # Primeiros 3 para exibição
+        })
+    
     context = {
-        'competencias': competencias,
+        'competencias_info': competencias_info,
+        'competencias': competencias,  # Mantido para compatibilidade
         'tipo_nota_choices': Competencia.TIPO_NOTA_CHOICES,
+        'total_competencias': competencias.count(),
         'title': 'Gerenciar Competências'
     }
     return render(request, 'admin_panel/gerenciar_competencias.html', context)
