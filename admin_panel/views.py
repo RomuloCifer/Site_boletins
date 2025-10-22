@@ -90,43 +90,117 @@ def detectar_professores_sem_turma():
         nome = professor.user.get_full_name() or professor.user.username
         problemas.append({
             'tipo': 'professor_sem_turma',
-            'severidade': 'baixa',
-            'descricao': f'Professor {nome} sem turma atribuída',
+            'severidade': 'baixa',  # Sempre baixa prioridade
+            'descricao': f'Professor {nome} disponível para atribuição',
             'detalhes': {
                 'professor': professor,
-                'usuario_ativo': professor.user.is_active
+                'usuario_ativo': professor.user.is_active,
+                'nome_completo': nome
             }
         })
     
     return problemas
 
 def analisar_problemas_sistema():
-    """Analisa todos os problemas do sistema e retorna estatísticas"""
-    # Detecta diferentes tipos de problemas
+    """Analisa todos os problemas do sistema e retorna estatísticas organizadas por prioridade"""
+    # Detecta diferentes tipos de problemas automáticos
     alunos_duplicados = detectar_alunos_duplicados()
     turmas_sem_professor = detectar_turmas_sem_professor()
     professores_sem_turma = detectar_professores_sem_turma()
     
-    # Organiza alunos duplicados por severidade
-    duplicados_por_severidade = {'alta': [], 'media': []}
-    for problema in alunos_duplicados:
-        duplicados_por_severidade[problema['severidade']].append(problema)
+    # Importa problemas relatados pelos professores
+    from core.models import ProblemaRelatado
+    problemas_relatados = ProblemaRelatado.objects.filter(status__in=['PENDENTE', 'EM_ANALISE'])
     
-    # Conta totais
-    total_problemas = len(alunos_duplicados) + len(turmas_sem_professor) + len(professores_sem_turma)
+    # Organiza problemas por prioridade
+    problemas_por_prioridade = {
+        'alta': [],
+        'media': [],
+        'baixa': []
+    }
+    
+    # Classifica alunos duplicados
+    for problema in alunos_duplicados:
+        problemas_por_prioridade[problema['severidade']].append(problema)
+    
+    # Turmas sem professor são sempre alta prioridade
+    for problema in turmas_sem_professor:
+        problemas_por_prioridade['alta'].append(problema)
+    
+    # Professores sem turma são sempre baixa prioridade
+    for problema in professores_sem_turma:
+        problemas_por_prioridade['baixa'].append(problema)
+    
+    # Adiciona problemas relatados pelos professores
+    for problema_relatado in problemas_relatados:
+        if problema_relatado.prioridade == 'CRITICA' or problema_relatado.prioridade == 'ALTA':
+            severidade = 'alta'
+        elif problema_relatado.prioridade == 'MEDIA':
+            severidade = 'media'
+        else:
+            severidade = 'baixa'
+        
+        problemas_por_prioridade[severidade].append({
+            'tipo': 'problema_relatado',
+            'severidade': severidade,
+            'descricao': f'Professor relatou: {problema_relatado.titulo}',
+            'detalhes': {
+                'problema_relatado': problema_relatado,
+                'professor': problema_relatado.professor,
+                'turma': problema_relatado.turma,
+                'data_relato': problema_relatado.data_relato,
+                'tipo_problema': problema_relatado.get_tipo_problema_display()
+            }
+        })
+    
+    # Conta totais por prioridade
+    total_alta = len(problemas_por_prioridade['alta'])
+    total_media = len(problemas_por_prioridade['media'])
+    total_baixa = len(problemas_por_prioridade['baixa'])
+    total_geral = total_alta + total_media + total_baixa
+    
+    # Conta específicos para compatibilidade com template
+    duplicados_alta = len([p for p in alunos_duplicados if p['severidade'] == 'alta'])
+    duplicados_media = len([p for p in alunos_duplicados if p['severidade'] == 'media'])
+    
+    # Conta problemas relatados por prioridade
+    problemas_relatados_alta = problemas_relatados.filter(prioridade__in=['CRITICA', 'ALTA']).count()
+    problemas_relatados_media = problemas_relatados.filter(prioridade='MEDIA').count()
+    problemas_relatados_baixa = problemas_relatados.filter(prioridade='BAIXA').count()
     
     estatisticas = {
-        'total_problemas': total_problemas,
+        'total_problemas': total_geral,
+        'total_por_prioridade': {
+            'alta': total_alta,
+            'media': total_media,
+            'baixa': total_baixa
+        },
         'alunos_duplicados': {
-            'alta': len(duplicados_por_severidade['alta']),
-            'media': len(duplicados_por_severidade['media'])
-        } if alunos_duplicados else {},
+            'alta': duplicados_alta,
+            'media': duplicados_media,
+            'total': len(alunos_duplicados)
+        },
         'turmas_sem_professor': len(turmas_sem_professor),
         'professores_sem_turma': len(professores_sem_turma),
+        'problemas_relatados': {
+            'alta': problemas_relatados_alta,
+            'media': problemas_relatados_media,
+            'baixa': problemas_relatados_baixa,
+            'total': problemas_relatados.count()
+        },
         'problemas_detalhados': {
+            'por_prioridade': problemas_por_prioridade,
             'alunos_duplicados': alunos_duplicados,
             'turmas_sem_professor': turmas_sem_professor,
-            'professores_sem_turma': professores_sem_turma
+            'professores_sem_turma': professores_sem_turma,
+            'problemas_relatados': list(problemas_relatados)
+        },
+        # Dados para análise e relatórios
+        'resumo_qualitativo': {
+            'nivel_criticidade': 'alta' if total_alta > 0 else 'media' if total_media > 0 else 'baixa' if total_baixa > 0 else 'ok',
+            'requer_acao_imediata': total_alta > 0,
+            'situacao_geral': 'crítica' if total_alta >= 5 else 'atenção' if total_alta > 0 or total_media >= 3 else 'estável',
+            'tem_problemas_professores': problemas_relatados.count() > 0
         }
     }
     

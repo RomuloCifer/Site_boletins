@@ -40,4 +40,21 @@ urlpatterns = [
         views.lancamento_notas_aluno_view, #
         name='lancamento_notas_aluno'
     ),
+    
+    # --- URLs PARA SISTEMA DE PROBLEMAS ---
+    path(
+        'turma/<int:turma_id>/relatar-problema/',
+        views.relatar_problema_view,
+        name='relatar_problema'
+    ),
+    path(
+        'meus-problemas/',
+        views.meus_problemas_view,
+        name='meus_problemas'
+    ),
+    path(
+        'turma/<int:turma_id>/detalhes/',
+        views.detalhes_turma_view,
+        name='detalhes_turma'
+    ),
 ]

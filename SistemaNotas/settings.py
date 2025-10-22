@@ -25,12 +25,12 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-va$_$wjuu+e$5n_yyc18c0-2poye)nzz!=&pls04m9lkt=&p-s'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-va$_$wjuu+e$5n_yyc18c0-2poye)nzz!=&pls04m9lkt=&p-s')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -110,9 +110,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
@@ -143,3 +143,25 @@ LOGOUT_REDIRECT_URL = 'teacher_portal:login'
 # Configurações de Suporte
 WHATSAPP_SUPPORT_NUMBER = os.getenv('WHATSAPP_SUPPORT_NUMBER', '5522999136252')
 SUPPORT_MESSAGE = os.getenv('SUPPORT_MESSAGE', 'Olá! Estou com dificuldades para acessar o Portal do Professor. Podem me ajudar?')
+
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'sistema-notas-cache',
+        'TIMEOUT': 300,  # 5 minutos
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        }
+    }
+}
+
+# Session Configuration
+SESSION_COOKIE_AGE = 3600  # 1 hora
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_SECURE = os.getenv('USE_HTTPS', 'False').lower() == 'true'
+
+# Security Settings (básicas)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'

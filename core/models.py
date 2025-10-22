@@ -163,7 +163,7 @@ class Aluno(models.Model):
 
     """Representa um aluno."""
 
-    nome_completo = models.CharField(max_length=200)
+    nome_completo = models.CharField(max_length=200, db_index=True)
 
     turma = models.ForeignKey ( # Relaciona o aluno a uma turma
 
@@ -175,13 +175,59 @@ class Aluno(models.Model):
 
 
 
-    matricula = models.CharField(max_length=20, unique=True, null=True, blank=True) # Número de matrícula único
+    matricula = models.CharField(max_length=20, unique=True, null=True, blank=True, db_index=True) # Número de matrícula único
+    
+    # Campos adicionais para melhor controle
+    data_cadastro = models.DateTimeField(auto_now_add=True)
+    ativo = models.BooleanField(default=True, help_text="Indica se o aluno está ativo no sistema")
+    observacoes = models.TextField(blank=True, help_text="Observações sobre o aluno")
 
 
 
     def __str__(self):
 
-        return f"{self.nome_completo} {self.turma.nome}" # Exibe o nome completo do aluno e a turma
+        return f"{self.nome_completo} - {self.turma.nome}" # Exibe o nome completo do aluno e a turma
+    
+    def get_progresso_completo(self):
+        """Retorna o progresso completo do aluno em suas competências"""
+        if not self.turma.competencias:
+            return 0
+        
+        competencias_turma = self.turma.competencias.all()
+        total_competencias = len(competencias_turma)
+        
+        if total_competencias == 0:
+            return 0
+        
+        notas_lancadas = LancamentoDeNota.objects.filter(
+            aluno=self,
+            competencia__in=competencias_turma
+        ).count()
+        
+        return int((notas_lancadas / total_competencias) * 100)
+    
+    def get_media_geral(self):
+        """Calcula a média geral do aluno em competências numéricas"""
+        notas_numericas = LancamentoDeNota.objects.filter(
+            aluno=self,
+            competencia__tipo_nota='NUM'
+        )
+        
+        if not notas_numericas.exists():
+            return None
+        
+        total = 0
+        count = 0
+        
+        for nota in notas_numericas:
+            try:
+                valor = float(nota.nota_valor)
+                total += valor
+                count += 1
+            except ValueError:
+                continue
+        
+        return round(total / count, 1) if count > 0 else None
 
    
 
@@ -192,6 +238,11 @@ class Aluno(models.Model):
         ordering = ['nome_completo'] # Ordena por nome completo do aluno
 
         unique_together = ('nome_completo', 'turma') # Garante que o nome do aluno seja único dentro da turma
+        indexes = [
+            models.Index(fields=['nome_completo']),
+            models.Index(fields=['matricula']),
+            models.Index(fields=['turma', 'ativo']),
+        ]
 
 
 
@@ -270,3 +321,167 @@ class ConfiguracaoSistema(models.Model):
         except (cls.DoesNotExist, ValueError):
             # Data padrão: 2 de novembro de 2025
             return date(2025, 11, 2)
+
+
+class ProblemaRelatado(models.Model):
+    """
+    Modelo para armazenar problemas relatados pelos professores
+    """
+    TIPO_PROBLEMA_CHOICES = [
+        ('ALUNO_DUPLICADO', 'Aluno Duplicado'),
+        ('ALUNO_FALTANDO', 'Aluno Faltando na Lista'),
+        ('TURMA_ERRADA', 'Aluno na Turma Errada'),
+        ('DADOS_INCORRETOS', 'Dados do Aluno Incorretos'),
+        ('PROBLEMA_SISTEMA', 'Problema no Sistema'),
+        ('OUTRO', 'Outro'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('EM_ANALISE', 'Em Análise'),
+        ('RESOLVIDO', 'Resolvido'),
+        ('REJEITADO', 'Rejeitado'),
+    ]
+    
+    PRIORIDADE_CHOICES = [
+        ('BAIXA', 'Baixa'),
+        ('MEDIA', 'Média'),
+        ('ALTA', 'Alta'),
+        ('CRITICA', 'Crítica'),
+    ]
+    
+    # Informações básicas
+    professor = models.ForeignKey(Professor, on_delete=models.CASCADE, verbose_name="Professor")
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name="Turma")
+    aluno = models.ForeignKey(Aluno, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Aluno (se aplicável)")
+    
+    # Detalhes do problema
+    tipo_problema = models.CharField(max_length=20, choices=TIPO_PROBLEMA_CHOICES, verbose_name="Tipo do Problema")
+    titulo = models.CharField(max_length=200, verbose_name="Título do Problema")
+    descricao = models.TextField(verbose_name="Descrição Detalhada")
+    
+    # Status e prioridade
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='PENDENTE', verbose_name="Status")
+    prioridade = models.CharField(max_length=10, choices=PRIORIDADE_CHOICES, default='MEDIA', verbose_name="Prioridade")
+    
+    # Timestamps
+    data_relato = models.DateTimeField(auto_now_add=True, verbose_name="Data do Relato")
+    data_atualizacao = models.DateTimeField(auto_now=True, verbose_name="Última Atualização")
+    data_resolucao = models.DateTimeField(null=True, blank=True, verbose_name="Data de Resolução")
+    
+    # Resposta do admin
+    resposta_admin = models.TextField(blank=True, null=True, verbose_name="Resposta do Administrador")
+    resolvido_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
+                                    related_name='problemas_resolvidos', verbose_name="Resolvido por")
+    
+    def __str__(self):
+        tipo_display = dict(self.TIPO_PROBLEMA_CHOICES).get(self.tipo_problema, self.tipo_problema)
+        professor_nome = self.professor.user.get_full_name() or self.professor.user.username
+        return f"{tipo_display} - {self.turma.nome} ({professor_nome})"
+    
+    class Meta:
+        verbose_name = "Problema Relatado"
+        verbose_name_plural = "Problemas Relatados"
+        ordering = ['-data_relato']
+        
+    def get_prioridade_badge_class(self):
+        """Retorna a classe CSS para o badge de prioridade"""
+        classes = {
+            'BAIXA': 'badge-info',
+            'MEDIA': 'badge-warning', 
+            'ALTA': 'badge-danger',
+            'CRITICA': 'badge-critical'
+        }
+        return classes.get(self.prioridade, 'badge-secondary')
+    
+    def get_status_badge_class(self):
+        """Retorna a classe CSS para o badge de status"""
+        classes = {
+            'PENDENTE': 'badge-warning',
+            'EM_ANALISE': 'badge-info',
+            'RESOLVIDO': 'badge-success',
+            'REJEITADO': 'badge-secondary'
+        }
+        return classes.get(self.status, 'badge-secondary')
+
+
+class AuditLog(models.Model):
+    """
+    Modelo para logs de auditoria do sistema
+    """
+    ACAO_CHOICES = [
+        ('CREATE', 'Criação'),
+        ('UPDATE', 'Atualização'),
+        ('DELETE', 'Exclusão'),
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+        ('IMPORT', 'Importação'),
+        ('EXPORT', 'Exportação'),
+        ('VIEW', 'Visualização'),
+        ('ERROR', 'Erro'),
+    ]
+    
+    SEVERIDADE_CHOICES = [
+        ('LOW', 'Baixa'),
+        ('MEDIUM', 'Média'),
+        ('HIGH', 'Alta'),
+        ('CRITICAL', 'Crítica'),
+    ]
+    
+    usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    acao = models.CharField(max_length=10, choices=ACAO_CHOICES)
+    severidade = models.CharField(max_length=10, choices=SEVERIDADE_CHOICES, default='LOW')
+    modelo_afetado = models.CharField(max_length=100, blank=True)
+    objeto_id = models.PositiveIntegerField(blank=True, null=True)
+    descricao = models.TextField()
+    detalhes_json = models.JSONField(blank=True, null=True)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Log de Auditoria"
+        verbose_name_plural = "Logs de Auditoria"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['timestamp', 'acao']),
+            models.Index(fields=['usuario', 'timestamp']),
+            models.Index(fields=['severidade', 'timestamp']),
+        ]
+    
+    def __str__(self):
+        acao_display = dict(self.ACAO_CHOICES).get(self.acao, self.acao)
+        return f"{self.timestamp.strftime('%Y-%m-%d %H:%M')} - {acao_display} - {self.descricao[:50]}"
+
+
+class SystemMetrics(models.Model):
+    """
+    Métricas do sistema para monitoramento
+    """
+    METRIC_CHOICES = [
+        ('USERS_ONLINE', 'Usuários Online'),
+        ('TOTAL_LOGINS', 'Total de Logins'),
+        ('IMPORT_SUCCESS', 'Importações Bem-sucedidas'),
+        ('IMPORT_ERRORS', 'Erros de Importação'),
+        ('NOTES_CREATED', 'Notas Criadas'),
+        ('SYSTEM_ERRORS', 'Erros do Sistema'),
+        ('DATABASE_SIZE', 'Tamanho do Banco'),
+        ('RESPONSE_TIME', 'Tempo de Resposta'),
+    ]
+    
+    metric_name = models.CharField(max_length=20, choices=METRIC_CHOICES)
+    metric_value = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    additional_data = models.JSONField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Métrica do Sistema"
+        verbose_name_plural = "Métricas do Sistema"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['metric_name', 'timestamp']),
+        ]
+    
+    def __str__(self):
+        metric_display = dict(self.METRIC_CHOICES).get(self.metric_name, self.metric_name)
+        return f"{metric_display}: {self.metric_value} ({self.timestamp.strftime('%Y-%m-%d %H:%M')})"

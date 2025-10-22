@@ -1,0 +1,365 @@
+{% extends "teacher_portal/base.html" %}
+{% load static %}
+
+{% block title %}Relatar Problema - {{ turma.nome }}{% endblock %}
+
+{% block content %}
+<div class="problema-container">
+    <div class="problema-header">
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-exclamation-triangle"></i>
+                Relatar Problema
+            </h1>
+            <p class="turma-info">
+                <strong>{{ turma.tipo_turma.nome }}</strong> - {{ turma.nome }}
+                <span class="total-alunos">({{ alunos_da_turma.count }} aluno{{ alunos_da_turma.count|pluralize:"s" }})</span>
+            </p>
+        </div>
+        <a href="{% url 'teacher_portal:detalhes_turma' turma.id %}" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i>
+            Voltar
+        </a>
+    </div>
+
+    <div class="problema-form-card">
+        <form method="post" class="problema-form">
+            {% csrf_token %}
+            
+            <div class="form-section">
+                <h3>
+                    <i class="fas fa-info-circle"></i>
+                    Informações do Problema
+                </h3>
+                
+                <div class="form-group">
+                    <label for="tipo_problema">Tipo do Problema *</label>
+                    <select name="tipo_problema" id="tipo_problema" class="form-control" required>
+                        <option value="">Selecione o tipo de problema</option>
+                        {% for value, label in tipos_problema %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="titulo">Título do Problema *</label>
+                    <input type="text" name="titulo" id="titulo" class="form-control" 
+                           placeholder="Ex: Aluno João duplicado na lista" maxlength="200" required>
+                    <small class="form-help">Descreva brevemente o problema</small>
+                </div>
+                
+                <div class="form-group aluno-group" style="display: none;">
+                    <label for="aluno_id">Aluno Relacionado (opcional)</label>
+                    <select name="aluno_id" id="aluno_id" class="form-control">
+                        <option value="">Selecione um aluno (se aplicável)</option>
+                        {% for aluno in alunos_da_turma %}
+                            <option value="{{ aluno.id }}">{{ aluno.nome_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="descricao">Descrição Detalhada *</label>
+                    <textarea name="descricao" id="descricao" class="form-control" rows="5" 
+                              placeholder="Descreva detalhadamente o problema encontrado..." required></textarea>
+                    <small class="form-help">Forneça o máximo de detalhes possível para ajudar na resolução</small>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i>
+                    Enviar Problema
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="problema-info-card">
+        <h4>
+            <i class="fas fa-lightbulb"></i>
+            Dicas para Relatar Problemas
+        </h4>
+        <ul class="dicas-list">
+            <li><strong>Seja específico:</strong> Descreva exatamente o que está acontecendo</li>
+            <li><strong>Inclua detalhes:</strong> Nome do aluno, data, horário se relevante</li>
+            <li><strong>Screenshots:</strong> Se possível, tire uma captura de tela</li>
+            <li><strong>Urgência:</strong> Indique se o problema impede seu trabalho</li>
+        </ul>
+        
+        <div class="suporte-contato">
+            <p>
+                <i class="fas fa-phone"></i>
+                <strong>Suporte Urgente:</strong>
+                <a href="tel:+5522999136252" class="phone-link">(22) 99913-6252</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.problema-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.problema-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.header-content h1 {
+    color: #1a202c;
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-content h1 i {
+    color: #f56565;
+}
+
+.turma-info {
+    color: #4a5568;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.total-alunos {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.btn-voltar {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-voltar:hover {
+    background: #cbd5e0;
+    color: #2d3748;
+}
+
+.problema-form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 2rem;
+}
+
+.form-section h3 {
+    color: #2d3748;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-section h3 i {
+    color: #4299e1;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    color: #374151;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.form-help {
+    color: #718096;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: #4299e1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #3182ce;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.problema-info-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.problema-info-card h4 {
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dicas-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem 0;
+}
+
+.dicas-list li {
+    margin-bottom: 0.75rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.dicas-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #90cdf4;
+    font-weight: bold;
+}
+
+.suporte-contato {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin-top: 1rem;
+}
+
+.phone-link {
+    color: #90cdf4;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.phone-link:hover {
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .problema-container {
+        padding: 1rem;
+    }
+    
+    .problema-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .problema-form-card {
+        padding: 1.5rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+}
+</style>
+
+<script>
+// Script para mostrar/ocultar campo de aluno baseado no tipo de problema
+document.getElementById('tipo_problema').addEventListener('change', function() {
+    const alunoGroup = document.querySelector('.aluno-group');
+    const problemasComAluno = ['ALUNO_DUPLICADO', 'ALUNO_FALTANDO', 'TURMA_ERRADA', 'DADOS_INCORRETOS'];
+    
+    if (problemasComAluno.includes(this.value)) {
+        alunoGroup.style.display = 'block';
+    } else {
+        alunoGroup.style.display = 'none';
+        document.getElementById('aluno_id').value = '';
+    }
+});
+
+// Auto-completar título baseado no tipo de problema
+document.getElementById('tipo_problema').addEventListener('change', function() {
+    const tituloField = document.getElementById('titulo');
+    const tipoProblema = this.value;
+    
+    if (!tituloField.value) { // Só preenche se estiver vazio
+        const sugestoes = {
+            'ALUNO_DUPLICADO': 'Aluno duplicado na lista da turma',
+            'ALUNO_FALTANDO': 'Aluno não aparece na lista da turma',
+            'TURMA_ERRADA': 'Aluno está na turma errada',
+            'DADOS_INCORRETOS': 'Dados do aluno estão incorretos',
+            'PROBLEMA_SISTEMA': 'Problema técnico no sistema',
+            'OUTRO': 'Outro problema'
+        };
+        
+        if (sugestoes[tipoProblema]) {
+            tituloField.value = sugestoes[tipoProblema];
+        }
+    }
+});
+</script>
+{% endblock %}

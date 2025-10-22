@@ -4,16 +4,57 @@
 [![Django](https://img.shields.io/badge/Django-5.2.7-green?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
-Um sistema completo e moderno para gerenciamento de notas, turmas e competências em escolas de idiomas, desenvolvido com Django. Inclui painéis administrativos avançados, analytics inteligentes e interface intuitiva para professores.
+## 📋 Resumo Executivo
+
+**Sistema de Boletins** é uma solução completa e moderna para gestão educacional em escolas de idiomas, desenvolvida em Django. O sistema oferece controle total sobre turmas, alunos, competências e notas, com funcionalidades avançadas de auditoria, analytics e administração.
+
+### 🎯 **Objetivo**
+Digitalizar e modernizar o processo de gestão de notas em escolas de inglês, proporcionando uma interface intuitiva para professores e um painel administrativo completo para coordenadores.
+
+### 👥 **Usuários-Alvo**
+- **Professores**: Lançamento rápido de notas e acompanhamento de progresso
+- **Coordenadores**: Visão geral de performance e analytics detalhados  
+- **Administradores**: Gestão completa do sistema e auditoria de ações
+
+### ⚡ **Principais Diferenciais**
+- **🔍 Sistema de Auditoria Completo**: Rastreamento automático de todas as ações
+- **📊 Analytics Inteligentes**: 4 gráficos interativos com dados em tempo real
+- **🛡️ Segurança Avançada**: Cache otimizado e headers de proteção
+- **📱 Interface Responsiva**: Funciona perfeitamente em desktop e mobile
+- **📁 Importação Inteligente**: Upload em lote com detecção automática de problemas
+
+### 🚀 **Tecnologia**
+Construído com **Django 5.2.7**, banco **SQLite** (facilmente migrável para PostgreSQL), frontend com **Chart.js** e **CSS3** moderno, sistema de **cache local** e **auditoria automática**.
+
+### 📈 **Status do Projeto**
+✅ **Em Produção** - Sistema estável com auditoria completa, interface unificada e performance otimizada.
+
+---
+
+Um sistema completo e moderno para gerenciamento de notas, turmas e competências em escolas de idiomas, desenvolvido com Django. Inclui painéis administrativos avançados, analytics inteligentes, **sistema de auditoria completo** e interface intuitiva para professores.
 
 ![Dashboard Preview](docs/dashboard-preview.png)
 
 ## ✨ Características Principais
 
+### 🔍 **Sistema de Auditoria Avançado** ⭐ NOVO!
+- **Rastreamento Completo**: Todas as ações importantes são registradas automaticamente
+- **Logs de Notas**: Histórico completo de lançamentos e alterações de notas
+- **Auditoria de Login**: Controle de acessos com IP e User-Agent
+- **Métricas do Sistema**: Coleta automática de dados de performance
+- **Interface Unificada**: Visualização de logs no painel administrativo
+
+### 🛡️ **Segurança e Performance** ⭐ NOVO!
+- **Headers de Segurança**: Proteção contra ataques comuns
+- **Sistema de Cache**: Performance otimizada (5 min, 1000 entradas)
+- **Localização PT-BR**: Interface completamente em português
+- **Backup Automático**: Sistema preparado para backups regulares
+
 ### 🎯 **Gestão Completa de Turmas**
 - **Tipos de Turma Flexíveis**: Basic 1, Basic 2, HR4, Advanced, Conversation, etc.
 - **Competências Personalizáveis**: Speaking, Listening, Reading, Writing, Grammar, Vocabulary
 - **Associação Automática**: Competências são automaticamente associadas aos tipos de turma
+- **Controle de Alunos**: Campos expandidos com data de cadastro, status ativo e observações
 
 ### 📊 **Analytics Inteligentes**
 - **4 Gráficos Interativos**: Progresso por turma, performance de professores, médias de competências, distribuição de notas
@@ -24,11 +65,13 @@ Um sistema completo e moderno para gerenciamento de notas, turmas e competência
 - **Percentuais Visuais**: Progresso de cada turma com barras coloridas
 - **Status Inteligente**: Indicadores verdes/amarelos/vermelhos baseados no progresso
 - **Lançamento Simplificado**: Interface intuitiva para inserção de notas
+- **Logs Automáticos**: Todas as alterações de notas são registradas automaticamente
 
 ### 🔧 **Administração Avançada**
 - **Importação Excel/CSV**: Upload em lote de alunos com validação inteligente
 - **Gestão de Competências**: CRUD completo com validação de dependências
 - **Sistema de Tipos**: Organização hierárquica de turmas e competências
+- **Detecção de Problemas**: Identificação automática de duplicatas e inconsistências
 
 ## 🚀 Instalação Rápida
 
@@ -85,30 +128,61 @@ python manage.py runserver
 
 | Funcionalidade | URL | Descrição |
 |----------------|-----|-----------|
-| **Dashboard Admin** | `/admin-tools/` | Painel administrativo principal |
+| **Dashboard Admin** | `/admin/` | ⭐ **Painel administrativo unificado** |
 | **Analytics** | `/admin-tools/analytics/` | Gráficos e estatísticas avançadas |
 | **Portal Professor** | `/portal/` | Interface para professores |
-| **Django Admin** | `/admin/` | Administração nativa do Django |
+| **Logs de Auditoria** | `/admin/core/auditlog/` | ⭐ **Sistema de auditoria completo** |
+| **Métricas Sistema** | `/admin/core/systemmetrics/` | ⭐ **Métricas de performance** |
 | **API Analytics** | `/admin-tools/api/analytics-data/` | Endpoint JSON para gráficos |
+
+## 🧪 Comandos Especiais
+
+### ⭐ Testar Sistema de Auditoria
+```bash
+python manage.py teste_auditoria
+```
+
+### 🔧 Configurar Data Limite
+```bash
+python manage.py configurar_data_limite
+```
+
+### 📊 Gerar Dados de Exemplo
+```bash
+python criar_dados_analytics.py
+```
+
+### 🛠️ Configurar Grupos de Usuário
+```bash
+python setup_groups.py
+```
 
 ## 🏗️ Estrutura do Projeto
 
 ```
 Site_boletins/
 ├── 📁 core/                    # Modelos principais
-│   ├── models.py              # TipoTurma, Turma, Competencia, Aluno, etc.
+│   ├── models.py              # TipoTurma, Turma, Competencia, Aluno, AuditLog, SystemMetrics
 │   ├── admin.py               # Configurações do Django Admin
-│   └── migrations/            # Migrações do banco
+│   ├── logging_utils.py       # ⭐ Sistema de auditoria simplificado
+│   ├── migrations/            # Migrações do banco
+│   └── management/commands/   # ⭐ Comandos personalizados
 ├── 📁 admin_panel/            # Painel administrativo
 │   ├── views.py               # Lógica de negócio e analytics
+│   ├── admin_custom.py        # ⭐ Admin customizado unificado
 │   ├── templates/             # Templates HTML
 │   └── static/                # CSS, JS, imagens
 ├── 📁 teacher_portal/         # Portal dos professores
-│   ├── views.py               # Funcionalidades do professor
+│   ├── views.py               # ⭐ Com logs automáticos
 │   └── templates/             # Interface do professor
 ├── 📁 SistemaNotas/           # Configurações Django
-│   ├── settings.py            # Configurações do projeto
+│   ├── settings.py            # ⭐ Com cache e segurança
+│   ├── settings_production.py # ⭐ Configurações de produção
 │   └── urls.py                # Roteamento principal
+├── 📁 docs/                   # ⭐ Documentação
+│   ├── MELHORIAS_IMPLEMENTADAS.md
+│   ├── EXPLICACAO_ADMIN.md
+│   └── COMMIT_DESCRIPTION.md
 ├── requirements.txt           # Dependências Python
 ├── manage.py                  # Comandos Django
 └── README.md                  # Este arquivo
@@ -120,13 +194,20 @@ Site_boletins/
 - **Django 5.2.7**: Framework web robusto
 - **SQLite**: Banco de dados (fácil migração para PostgreSQL)
 - **Pandas**: Processamento de arquivos Excel/CSV
-- **Django REST Framework**: APIs JSON
+- **Sistema de Cache**: ⭐ Local memory cache otimizado
+- **Sistema de Auditoria**: ⭐ Logs automáticos e rastreamento
 
 ### Frontend
 - **Chart.js**: Gráficos interativos e responsivos
 - **CSS3**: Gradientes, animações e design moderno
 - **HTML5**: Estrutura semântica
 - **JavaScript**: Interatividade e AJAX
+
+### Segurança e Performance
+- **Headers de Segurança**: ⭐ Proteção contra ataques
+- **Cache Inteligente**: ⭐ 5 minutos, 1000 entradas
+- **Auditoria Completa**: ⭐ Rastreamento de todas as ações
+- **Localização PT-BR**: ⭐ Interface em português
 
 ### Ferramentas
 - **openpyxl**: Leitura de arquivos Excel
@@ -160,27 +241,34 @@ Conversation → Speaking, Listening
 
 ### Para Administradores
 
-#### 1. **Configuração Inicial**
-1. Acesse `/admin-tools/`
-2. Vá em **"Tipos de Turma"** → Crie os tipos necessários
-3. Associe competências a cada tipo
-4. Em **"Gerenciar Competências"** → Configure as avaliações
+#### 1. **Acesso ao Sistema** ⭐ NOVO!
+1. Acesse `/admin/` (interface unificada)
+2. Veja o dashboard com estatísticas em tempo real
+3. Monitore logs de auditoria em **"Audit logs"**
+4. Verifique métricas do sistema em **"System metrics"**
 
-#### 2. **Importação de Alunos**
+#### 2. **Configuração Inicial**
+1. Vá em **"Tipos de Turma"** → Crie os tipos necessários
+2. Associe competências a cada tipo
+3. Em **"Gerenciar Competências"** → Configure as avaliações
+4. Configure data limite em **"Configuração Sistema"**
+
+#### 3. **Importação de Alunos**
 1. Clique em **"Importar Alunos"**
 2. Faça upload de arquivo CSV/Excel com colunas:
    ```csv
-   Nome Completo,Turma,Matricula
-   João Silva,Basic 1 - MW18,2024001
-   Maria Santos,HR4 - TT20,2024002
+   nome_completo,identificador_turma,matricula
+   João Silva,Basic1-MW18,2024001
+   Maria Santos,HR4-TT20,2024002
    ```
-3. Selecione a turma de destino
-4. Confirme a importação
+3. Selecione modo: turma específica ou lote
+4. Confirme a importação (logs automáticos gerados)
 
-#### 3. **Visualização de Analytics**
-1. Acesse **"Gráficos Inteligentes"**
-2. Analise os 4 gráficos disponíveis
-3. Use tooltips para informações detalhadas
+#### 4. **Monitoramento e Auditoria** ⭐ NOVO!
+1. **Logs de Auditoria**: Veja todas as ações dos usuários
+2. **Métricas**: Monitore performance do sistema
+3. **Detecção de Problemas**: Identificação automática de duplicatas
+4. **Teste de Auditoria**: Execute `python manage.py teste_auditoria`
 
 ### Para Professores
 
@@ -189,11 +277,12 @@ Conversation → Speaking, Listening
 2. Faça login com suas credenciais
 3. Visualize suas turmas no dashboard
 
-#### 2. **Lançamento de Notas**
+#### 2. **Lançamento de Notas** ⭐ MELHORADO!
 1. Clique na turma desejada
 2. Selecione o aluno
 3. Escolha a competência
 4. Insira a nota (numérica ou categórica)
+5. Salve (ação automaticamente registrada nos logs)
 5. Salve
 
 #### 3. **Acompanhamento**
@@ -271,7 +360,9 @@ Contribuições são bem-vindas! Para contribuir:
 - [ ] **Notificações**: Sistema de alertas por email
 - [ ] **App Mobile**: Aplicativo React Native
 - [ ] **Dashboard Pais**: Portal para responsáveis
-- [ ] **Backup Automático**: Sincronização com cloud
+- [x] **Sistema de Auditoria**: ⭐ **IMPLEMENTADO!**
+- [x] **Cache Otimizado**: ⭐ **IMPLEMENTADO!**
+- [x] **Segurança Avançada**: ⭐ **IMPLEMENTADO!**
 
 ### 🎯 Melhorias Planejadas
 - [ ] **Testes Automatizados**: Cobertura >90%
@@ -279,6 +370,49 @@ Contribuições são bem-vindas! Para contribuir:
 - [ ] **CI/CD**: Pipeline de deploy automático
 - [ ] **Monitoramento**: Logs e métricas avançadas
 - [ ] **Multi-idiomas**: Internacionalização (i18n)
+- [x] **Backup Sistema**: ⭐ **PREPARADO!**
+- [x] **Interface Unificada**: ⭐ **IMPLEMENTADO!**
+
+## 🔍 Sistema de Auditoria ⭐ NOVO!
+
+### Funcionalidades de Auditoria
+- **Rastreamento Automático**: Todas as ações são logadas
+- **Logs de Notas**: Histórico de criação/edição de notas
+- **Auditoria de Login**: Controle de acessos e IPs
+- **Métricas do Sistema**: Performance e uso
+- **Interface Admin**: Visualização unificada dos logs
+
+### Como Usar
+```bash
+# Testar sistema de auditoria
+python manage.py teste_auditoria
+
+# Visualizar logs
+# Acesse: http://127.0.0.1:8000/admin/core/auditlog/
+
+# Verificar métricas
+# Acesse: http://127.0.0.1:8000/admin/core/systemmetrics/
+```
+
+### Tipos de Log
+- **LOGIN**: Tentativas de acesso (sucesso/falha)
+- **CREATE/UPDATE**: Criação e edição de notas
+- **IMPORT**: Importação de alunos
+- **ERROR**: Erros do sistema
+- **CUSTOM**: Ações personalizadas
+
+## 🛡️ Segurança e Performance ⭐ NOVO!
+
+### Configurações de Segurança
+- **Headers de Proteção**: X-Frame-Options, X-Content-Type-Options
+- **Cache Inteligente**: 5 minutos, 1000 entradas máx
+- **Logs de IP**: Rastreamento de origem das ações
+- **Fallback de Logs**: Sistema não falha se auditoria der erro
+
+### Performance
+- **Cache Local**: Reduz consultas ao banco
+- **Índices Otimizados**: Consultas de auditoria rápidas
+- **Queries Eficientes**: Otimização de N+1 queries
 
 ## 🐛 Suporte
 
@@ -286,14 +420,68 @@ Contribuições são bem-vindas! Para contribuir:
 
 #### Erro de Migração
 ```bash
-# Resetar migrações (CUIDADO: perde dados!)
+# Aplicar migrações pendentes
+python manage.py migrate
+
+# Se persistir, resetar (CUIDADO: perde dados!)
 rm db.sqlite3
 rm -rf core/migrations/0*.py
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-#### Dependências
+#### Sistema de Auditoria ⭐ NOVO!
+```bash
+# Testar se auditoria está funcionando
+python manage.py teste_auditoria
+
+# Verificar logs de erro
+python manage.py shell
+>>> from core.models import AuditLog
+>>> AuditLog.objects.filter(acao='ERROR').order_by('-timestamp')[:5]
+```
+
+#### Cache Issues
+```bash
+# Limpar cache manualmente
+python manage.py shell
+>>> from django.core.cache import cache
+>>> cache.clear()
+```
+
+### Contato
+- **GitHub Issues**: [Reportar bugs](https://github.com/RomuloCifer/Site_boletins/issues)
+- **Email**: romulocifer@gmail.com
+- **Documentação**: Consulte os arquivos em `/docs/`
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+
+---
+
+## ⭐ Changelog Recente
+
+### v2.0.0 - Sistema de Auditoria (22/10/2025)
+- ✅ **Sistema de auditoria completo** com rastreamento de todas as ações
+- ✅ **Interface admin unificada** com logs integrados
+- ✅ **Cache otimizado** para melhor performance
+- ✅ **Configurações de segurança** aprimoradas
+- ✅ **Localização PT-BR** completa
+- ✅ **Modelo Aluno expandido** com novos campos
+- ✅ **Comando de teste** para validação do sistema
+- ✅ **Documentação completa** das melhorias
+
+### v1.0.0 - Versão Inicial
+- ✅ Sistema básico de notas e turmas
+- ✅ Portal do professor funcional
+- ✅ Analytics com 4 gráficos
+- ✅ Importação de alunos CSV/Excel
+- ✅ Gestão de competências
+
+---
+
+**🎯 Sistema de Boletins - Desenvolvido com ❤️ usando Django**
 ```bash
 # Reinstalar dependências
 pip install --upgrade -r requirements.txt
@@ -324,9 +512,9 @@ Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](L
 ## 📞 Contato
 
 **Desenvolvedor**: RomuloCifer  
-**Email**: [seu-email@exemplo.com](mailto:seu-email@exemplo.com)  
+**Email**: [seu-email@exemplo.com](ou_iy@hotmail.com  )  
 **GitHub**: [@RomuloCifer](https://github.com/RomuloCifer)  
-**LinkedIn**: [Seu LinkedIn](https://linkedin.com/in/seu-perfil)
+**LinkedIn**: [Seu LinkedIn](https://www.linkedin.com/in/romulo-portugal-070781363)
 
 ---
 

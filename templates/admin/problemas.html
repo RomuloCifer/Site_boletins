@@ -13,169 +13,633 @@
 {% block content %}
 <div class="dashboard-header">
     <h1>
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="fas fa-shield-alt"></i>
         {{ title }}
     </h1>
     <p class="dashboard-description">
-        Central de resolução de problemas do sistema
+        Central de monitoramento e resolução de problemas do sistema
     </p>
 </div>
 
 <div class="problemas-dashboard">
-    <div class="problemas-stats">
-        <div class="stat-card">
-            <div class="stat-icon alta">
-                <i class="fas fa-exclamation-circle"></i>
+    <!-- Cards de Prioridade -->
+    <div class="priority-cards">
+        <!-- Card Vermelho - Alta Prioridade -->
+        <div class="priority-card alta-prioridade">
+            <div class="card-header">
+                <div class="priority-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="priority-info">
+                    <h3>Alta Prioridade</h3>
+                    <span class="priority-badge alta">CRÍTICO</span>
+                </div>
             </div>
-            <div class="stat-content">
-                <h3>Alta Prioridade</h3>
-                <p class="stat-number">{{ problemas_sistema.alunos_duplicados.alta|default:"0" }}</p>
-                <small>Duplicados mesma turma + {{ problemas_sistema.turmas_sem_professor|default:"0" }} turmas s/ prof</small>
+            
+            <div class="card-body">
+                <div class="problem-count">
+                    {% with alta_count=problemas_sistema.alunos_duplicados.alta|add:problemas_sistema.turmas_sem_professor %}
+                        <span class="count-number">{{ alta_count|default:"0" }}</span>
+                        <span class="count-label">problema{{ alta_count|pluralize:"s" }}</span>
+                    {% endwith %}
+                </div>
+                
+                <div class="problem-list">
+                    {% if problemas_sistema.alunos_duplicados.alta > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-users"></i>
+                            <span>{{ problemas_sistema.alunos_duplicados.alta }} aluno{{ problemas_sistema.alunos_duplicados.alta|pluralize:"s" }} duplicado{{ problemas_sistema.alunos_duplicados.alta|pluralize:"s" }} (mesma turma)</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.turmas_sem_professor > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <span>{{ problemas_sistema.turmas_sem_professor }} turma{{ problemas_sistema.turmas_sem_professor|pluralize:"s" }} sem professor</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.problemas_relatados.alta > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>{{ problemas_sistema.problemas_relatados.alta }} problema{{ problemas_sistema.problemas_relatados.alta|pluralize:"s" }} relatado{{ problemas_sistema.problemas_relatados.alta|pluralize:"s" }} pelos professores (alta prioridade)</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.alunos_duplicados.alta == 0 and problemas_sistema.turmas_sem_professor == 0 and problemas_sistema.problemas_relatados.alta == 0 %}
+                        <div class="problem-item success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Nenhum problema crítico</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-actions">
+                    {% if problemas_sistema.alunos_duplicados.alta > 0 %}
+                        <a href="{% url 'admin:admin_duplicados' %}" class="action-btn alta">
+                            <i class="fas fa-tools"></i>
+                            Resolver Duplicados
+                        </a>
+                    {% endif %}
+                    {% if problemas_sistema.turmas_sem_professor > 0 %}
+                        <a href="{% url 'admin:admin_turmas_sem_professor' %}" class="action-btn alta">
+                            <i class="fas fa-user-plus"></i>
+                            Atribuir Professores
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon media">
-                <i class="fas fa-exclamation-triangle"></i>
+
+        <!-- Card Laranja - Média Prioridade -->
+        <div class="priority-card media-prioridade">
+            <div class="card-header">
+                <div class="priority-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="priority-info">
+                    <h3>Média Prioridade</h3>
+                    <span class="priority-badge media">ATENÇÃO</span>
+                </div>
             </div>
-            <div class="stat-content">
-                <h3>Média Prioridade</h3>
-                <p class="stat-number">{{ problemas_sistema.alunos_duplicados.media|default:"0" }}</p>
-                <small>Duplicados diferentes turmas + {{ problemas_sistema.professores_sem_turma|default:"0" }} prof s/ turma</small>
+            
+            <div class="card-body">
+                <div class="problem-count">
+                    <span class="count-number">{{ problemas_sistema.alunos_duplicados.media|default:"0" }}</span>
+                    <span class="count-label">problema{{ problemas_sistema.alunos_duplicados.media|pluralize:"s" }}</span>
+                </div>
+                
+                <div class="problem-list">
+                    {% if problemas_sistema.alunos_duplicados.media > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-users"></i>
+                            <span>{{ problemas_sistema.alunos_duplicados.media }} aluno{{ problemas_sistema.alunos_duplicados.media|pluralize:"s" }} duplicado{{ problemas_sistema.alunos_duplicados.media|pluralize:"s" }} (turmas diferentes)</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.problemas_relatados.media > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-bell"></i>
+                            <span>{{ problemas_sistema.problemas_relatados.media }} problema{{ problemas_sistema.problemas_relatados.media|pluralize:"s" }} relatado{{ problemas_sistema.problemas_relatados.media|pluralize:"s" }} pelos professores (média prioridade)</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.alunos_duplicados.media == 0 and problemas_sistema.problemas_relatados.media == 0 %}
+                        <div class="problem-item success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Nenhum problema detectado</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-actions">
+                    {% if problemas_sistema.alunos_duplicados.media > 0 %}
+                        <a href="{% url 'admin:admin_duplicados' %}" class="action-btn media">
+                            <i class="fas fa-search"></i>
+                            Verificar Duplicados
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-        
-        <div class="stat-card">
-            <div class="stat-icon total">
-                <i class="fas fa-list"></i>
+
+        <!-- Card Azul - Baixa Prioridade -->
+        <div class="priority-card baixa-prioridade">
+            <div class="card-header">
+                <div class="priority-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="priority-info">
+                    <h3>Baixa Prioridade</h3>
+                    <span class="priority-badge baixa">OTIMIZAÇÃO</span>
+                </div>
             </div>
-            <div class="stat-content">
-                <h3>Total</h3>
-                <p class="stat-number">{{ problemas_sistema.total_problemas|default:"0" }}</p>
-                <small>Todos os problemas detectados</small>
+            
+            <div class="card-body">
+                <div class="problem-count">
+                    <span class="count-number">{{ problemas_sistema.professores_sem_turma|default:"0" }}</span>
+                    <span class="count-label">item{{ problemas_sistema.professores_sem_turma|pluralize:"ns" }}</span>
+                </div>
+                
+                <div class="problem-list">
+                    {% if problemas_sistema.professores_sem_turma > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-user-tie"></i>
+                            <span>{{ problemas_sistema.professores_sem_turma }} professor{{ problemas_sistema.professores_sem_turma|pluralize:"es" }} sem turma atribuída</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.problemas_relatados.baixa > 0 %}
+                        <div class="problem-item">
+                            <i class="fas fa-info-circle"></i>
+                            <span>{{ problemas_sistema.problemas_relatados.baixa }} problema{{ problemas_sistema.problemas_relatados.baixa|pluralize:"s" }} relatado{{ problemas_sistema.problemas_relatados.baixa|pluralize:"s" }} pelos professores (baixa prioridade)</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if problemas_sistema.professores_sem_turma == 0 and problemas_sistema.problemas_relatados.baixa == 0 %}
+                        <div class="problem-item success">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Tudo otimizado</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-actions">
+                    {% if problemas_sistema.professores_sem_turma > 0 %}
+                        <a href="{% url 'admin:admin_professores_sem_turma' %}" class="action-btn baixa">
+                            <i class="fas fa-clipboard-list"></i>
+                            Revisar Professores
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="problemas-actions">
-        <h2>
-            <i class="fas fa-tools"></i>
-            Ações Disponíveis
-        </h2>
-        
-        <div class="actions-grid">
-            <a href="{% url 'admin:admin_duplicados' %}" class="action-card primary">
-                <div class="action-icon">
-                    <i class="fas fa-users"></i>
+    <!-- Resumo Geral -->
+    <div class="summary-section">
+        <div class="summary-card">
+            <div class="summary-header">
+                <h3>
+                    <i class="fas fa-chart-pie"></i>
+                    Resumo Geral do Sistema
+                </h3>
+            </div>
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <span class="stat-value">{{ problemas_sistema.total_problemas|default:"0" }}</span>
+                    <span class="stat-label">Total de Problemas</span>
                 </div>
-                <div class="action-content">
-                    <h3>Alunos Duplicados</h3>
-                    <p>{{ problemas_sistema.alunos_duplicados.alta|add:problemas_sistema.alunos_duplicados.media }} casos detectados</p>
-                    <div class="severity-indicators">
-                        {% if problemas_sistema.alunos_duplicados.alta > 0 %}
-                            <span class="severity alta">{{ problemas_sistema.alunos_duplicados.alta }} Alta</span>
-                        {% endif %}
-                        {% if problemas_sistema.alunos_duplicados.media > 0 %}
-                            <span class="severity media">{{ problemas_sistema.alunos_duplicados.media }} Média</span>
-                        {% endif %}
-                    </div>
+                <div class="stat-separator"></div>
+                <div class="stat-item">
+                    {% with criticos=problemas_sistema.alunos_duplicados.alta|add:problemas_sistema.turmas_sem_professor|add:problemas_sistema.problemas_relatados.alta %}
+                        <span class="stat-value critical">{{ criticos|default:"0" }}</span>
+                        <span class="stat-label">Críticos</span>
+                    {% endwith %}
                 </div>
-                <div class="action-arrow">
-                    <i class="fas fa-arrow-right"></i>
+                <div class="stat-separator"></div>
+                <div class="stat-item">
+                    {% with medios=problemas_sistema.alunos_duplicados.media|add:problemas_sistema.problemas_relatados.media %}
+                        <span class="stat-value warning">{{ medios|default:"0" }}</span>
+                        <span class="stat-label">Médios</span>
+                    {% endwith %}
                 </div>
-            </a>
-            
-            <a href="{% url 'admin:admin_turmas_sem_professor' %}" class="action-card secondary">
-                <div class="action-icon">
-                    <i class="fas fa-chalkboard-teacher"></i>
+                <div class="stat-separator"></div>
+                <div class="stat-item">
+                    {% with baixos=problemas_sistema.professores_sem_turma|add:problemas_sistema.problemas_relatados.baixa %}
+                        <span class="stat-value info">{{ baixos|default:"0" }}</span>
+                        <span class="stat-label">Baixos</span>
+                    {% endwith %}
                 </div>
-                <div class="action-content">
-                    <h3>Turmas sem Professor</h3>
-                    <p>{{ problemas_sistema.turmas_sem_professor }} turmas precisam de professor</p>
-                    {% if problemas_sistema.turmas_sem_professor > 0 %}
-                        <span class="severity alta">Prioridade Alta</span>
-                    {% else %}
-                        <span class="severity ok">Tudo OK</span>
-                    {% endif %}
-                </div>
-                <div class="action-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
-            
-            <a href="{% url 'admin:admin_professores_sem_turma' %}" class="action-card tertiary">
-                <div class="action-icon">
-                    <i class="fas fa-user-tie"></i>
-                </div>
-                <div class="action-content">
-                    <h3>Professores sem Turma</h3>
-                    <p>{{ problemas_sistema.professores_sem_turma }} professores disponíveis</p>
-                    {% if problemas_sistema.professores_sem_turma > 0 %}
-                        <span class="severity media">Otimização</span>
-                    {% else %}
-                        <span class="severity ok">Tudo OK</span>
-                    {% endif %}
-                </div>
-                <div class="action-arrow">
-                    <i class="fas fa-arrow-right"></i>
-                </div>
-            </a>
+            </div>
+            <div class="summary-actions">
+                <a href="{% url 'admin:index' %}" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Voltar ao Dashboard
+                </a>
+                <button onclick="window.location.reload()" class="btn-primary">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar Dados
+                </button>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
 .problemas-dashboard {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 2rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.problemas-stats {
+/* Priority Cards Grid */
+.priority-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
     margin-bottom: 3rem;
 }
 
-.stat-icon.alta {
-    background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+/* Priority Card Base */
+.priority-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
-.stat-icon.media {
-    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+.priority-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
 }
 
-.stat-icon.total {
-    background: linear-gradient(135deg, #2196f3, #1976d2) !important;
+/* Card Headers */
+.card-header {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.severity-indicators {
-    margin-top: 0.5rem;
-}
-
-.severity {
-    display: inline-block;
-    padding: 0.2rem 0.5rem;
+.priority-icon {
+    width: 60px;
+    height: 60px;
     border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.priority-info h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+}
+
+.priority-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
     font-size: 0.75rem;
-    font-weight: bold;
-    margin-right: 0.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
 }
 
-.severity.alta {
-    background: #ffebee;
-    color: #d32f2f;
+/* Alta Prioridade - Vermelho */
+.alta-prioridade {
+    background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+    border-left: 4px solid #f56565;
 }
 
-.severity.media {
-    background: #fff3e0;
-    color: #f57c00;
+.alta-prioridade .priority-icon {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
 }
 
-.severity.ok {
-    background: #e8f5e8;
-    color: #388e3c;
+.alta-prioridade .priority-badge.alta {
+    background: #fed7d7;
+    color: #c53030;
+}
+
+/* Média Prioridade - Laranja */
+.media-prioridade {
+    background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%);
+    border-left: 4px solid #ed8936;
+}
+
+.media-prioridade .priority-icon {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+}
+
+.media-prioridade .priority-badge.media {
+    background: #feebc8;
+    color: #c05621;
+}
+
+/* Baixa Prioridade - Azul */
+.baixa-prioridade {
+    background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+    border-left: 4px solid #4299e1;
+}
+
+.baixa-prioridade .priority-icon {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+}
+
+.baixa-prioridade .priority-badge.baixa {
+    background: #bee3f8;
+    color: #2b6cb0;
+}
+
+/* Card Body */
+.card-body {
+    padding: 1.5rem;
+}
+
+.problem-count {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.count-number {
+    display: block;
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #1a1a1a;
+}
+
+.count-label {
+    display: block;
+    font-size: 0.875rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+/* Problem List */
+.problem-list {
+    margin-bottom: 1.5rem;
+}
+
+.problem-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.problem-item i {
+    width: 20px;
+    text-align: center;
+    color: #666;
+}
+
+.problem-item span {
+    font-size: 0.875rem;
+    color: #333;
+}
+
+.problem-item.success {
+    background: rgba(72, 187, 120, 0.1);
+    border-color: rgba(72, 187, 120, 0.2);
+}
+
+.problem-item.success i {
+    color: #48bb78;
+}
+
+.problem-item.success span {
+    color: #2f855a;
+    font-weight: 500;
+}
+
+/* Card Actions */
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.action-btn.alta {
+    background: #f56565;
+    color: white;
+}
+
+.action-btn.alta:hover {
+    background: #e53e3e;
+    transform: scale(1.02);
+}
+
+.action-btn.media {
+    background: #ed8936;
+    color: white;
+}
+
+.action-btn.media:hover {
+    background: #dd6b20;
+    transform: scale(1.02);
+}
+
+.action-btn.baixa {
+    background: #4299e1;
+    color: white;
+}
+
+.action-btn.baixa:hover {
+    background: #3182ce;
+    transform: scale(1.02);
+}
+
+/* Summary Section */
+.summary-section {
+    margin-top: 3rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    color: white;
+    box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+}
+
+.summary-header h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.summary-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-value.critical {
+    color: #feb2b2;
+}
+
+.stat-value.warning {
+    color: #fbd38d;
+}
+
+.stat-value.info {
+    color: #90cdf4;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.875rem;
+    opacity: 0.8;
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-separator {
+    width: 1px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 1rem;
+}
+
+.summary-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary, .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .priority-cards {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .problemas-dashboard {
+        padding: 1rem;
+    }
+    
+    .summary-stats {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .stat-separator {
+        width: 40px;
+        height: 1px;
+        margin: 0;
+    }
+    
+    .summary-actions {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .priority-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .count-number {
+        font-size: 2.5rem;
+    }
 }
 </style>
 {% endblock %}

@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 # Importa o "segurança" que exige que o usuário esteja logado
 from django.contrib.auth.decorators import login_required
 # Importa o modelo Turma para podermos buscar as turmas
-from core.models import Turma, Aluno, LancamentoDeNota, ConfiguracaoSistema
+from core.models import Turma, Aluno, LancamentoDeNota, ConfiguracaoSistema, ProblemaRelatado
 from django.contrib import messages
 from django.contrib.auth.views import LoginView
 from django.conf import settings
+from core.logging_utils import SimpleLogger
 import urllib.parse
 from datetime import datetime, date
 import math
@@ -218,11 +219,27 @@ def lancamento_notas_aluno_view(request, turma_id, aluno_id):
                 # Tenta achar uma nota (aluno, competencia).
                 # Se achar, ATUALIZA o valor.
                 # Se não achar, CRIA uma nova.
-                LancamentoDeNota.objects.update_or_create(
+                nota_obj, created = LancamentoDeNota.objects.update_or_create(
                     aluno=aluno,
                     competencia=comp,
                     defaults={'nota_valor': nota_valor_str}
                 )
+                
+                # Log da ação
+                try:
+                    action = 'CREATE' if created else 'UPDATE'
+                    description = f"Nota {action.lower()} para {aluno.nome_completo} em {comp.nome}: {nota_valor_str}"
+                    SimpleLogger.log_action(
+                        user=request.user,
+                        action=action,
+                        description=description,
+                        severity='LOW',
+                        request=request
+                    )
+                except Exception as e:
+                    # Log de erro se falhar
+                    SimpleLogger.log_error(request.user, f"Erro ao registrar log de nota: {e}", request)
+                    
             # (Opcional: se o valor for vazio, você pode querer deletar a nota)
             # else:
             #    LancamentoDeNota.objects.filter(aluno=aluno, competencia=comp).delete()
@@ -310,3 +327,125 @@ class CustomLoginView(LoginView):
         })
         
         return context
+
+
+@login_required(login_url='teacher_portal:login')
+def detalhes_turma_view(request, turma_id):
+    """
+    View para exibir detalhes da turma com opção de relatar problemas
+    """
+    try:
+        professor = request.user.professor
+        turma = get_object_or_404(Turma, id=turma_id, professor_responsavel=professor)
+        
+        # Buscar alunos da turma
+        alunos_da_turma = Aluno.objects.filter(turma=turma).order_by('nome_completo')
+        
+        # Estatísticas da turma
+        total_alunos = alunos_da_turma.count()
+        competencias_da_turma = turma.competencias.all() if turma.competencias else []
+        total_competencias = len(competencias_da_turma)
+        
+        # Problemas relatados desta turma
+        problemas_turma = ProblemaRelatado.objects.filter(
+            professor=professor, 
+            turma=turma
+        ).order_by('-data_relato')[:5]  # Últimos 5 problemas
+        
+        context = {
+            'turma': turma,
+            'alunos_da_turma': alunos_da_turma,
+            'total_alunos': total_alunos,
+            'total_competencias': total_competencias,
+            'competencias': competencias_da_turma,
+            'problemas_recentes': problemas_turma,
+        }
+        
+        return render(request, 'teacher_portal/detalhes_turma.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Erro ao carregar detalhes da turma: {str(e)}')
+        return redirect('teacher_portal:dashboard')
+
+
+@login_required(login_url='teacher_portal:login')
+def relatar_problema_view(request, turma_id):
+    """
+    View para professores relatarem problemas sobre suas turmas
+    """
+    try:
+        professor = request.user.professor
+        turma = get_object_or_404(Turma, id=turma_id, professor_responsavel=professor)
+        
+        if request.method == 'POST':
+            # Processar o formulário
+            tipo_problema = request.POST.get('tipo_problema')
+            titulo = request.POST.get('titulo')
+            descricao = request.POST.get('descricao')
+            aluno_id = request.POST.get('aluno_id')
+            
+            # Validações básicas
+            if not all([tipo_problema, titulo, descricao]):
+                messages.error(request, 'Todos os campos obrigatórios devem ser preenchidos.')
+                return redirect('teacher_portal:relatar_problema', turma_id=turma_id)
+            
+            # Criar o problema
+            problema = ProblemaRelatado.objects.create(
+                professor=professor,
+                turma=turma,
+                aluno_id=aluno_id if aluno_id else None,
+                tipo_problema=tipo_problema,
+                titulo=titulo,
+                descricao=descricao,
+                prioridade='ALTA' if tipo_problema in ['ALUNO_DUPLICADO', 'TURMA_ERRADA'] else 'MEDIA'
+            )
+            
+            messages.success(request, f'Problema relatado com sucesso! Número do protocolo: #{problema.id}')
+            return redirect('teacher_portal:detalhes_turma', turma_id=turma_id)
+        
+        # GET - Exibir formulário
+        alunos_da_turma = Aluno.objects.filter(turma=turma).order_by('nome_completo')
+        
+        context = {
+            'turma': turma,
+            'alunos_da_turma': alunos_da_turma,
+            'tipos_problema': ProblemaRelatado.TIPO_PROBLEMA_CHOICES,
+        }
+        
+        return render(request, 'teacher_portal/relatar_problema.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Erro ao acessar a página: {str(e)}')
+        return redirect('teacher_portal:dashboard')
+
+
+@login_required(login_url='teacher_portal:login')
+def meus_problemas_view(request):
+    """
+    View para professores visualizarem seus problemas relatados
+    """
+    try:
+        professor = request.user.professor
+        
+        # Filtrar problemas do professor
+        problemas = ProblemaRelatado.objects.filter(
+            professor=professor
+        ).order_by('-data_relato')
+        
+        # Estatísticas
+        total_problemas = problemas.count()
+        problemas_pendentes = problemas.filter(status='PENDENTE').count()
+        problemas_resolvidos = problemas.filter(status='RESOLVIDO').count()
+        
+        context = {
+            'problemas': problemas,
+            'total_problemas': total_problemas,
+            'problemas_pendentes': problemas_pendentes,
+            'problemas_resolvidos': problemas_resolvidos,
+        }
+        
+        return render(request, 'teacher_portal/meus_problemas.html', context)
+        
+    except Exception as e:
+        messages.error(request, f'Erro ao carregar problemas: {str(e)}')
+        return redirect('teacher_portal:dashboard')

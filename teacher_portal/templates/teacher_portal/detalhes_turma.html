@@ -1,0 +1,486 @@
+{% extends "teacher_portal/base.html" %}
+{% load static %}
+
+{% block title %}{{ turma.nome }} - Detalhes{% endblock %}
+
+{% block content %}
+<div class="detalhes-container">
+    <!-- Header da Turma -->
+    <div class="turma-header">
+        <div class="turma-info">
+            <h1>{{ turma.tipo_turma.nome }}</h1>
+            <p class="turma-nome">{{ turma.nome }}</p>
+            <div class="turma-stats">
+                <span class="stat">
+                    <i class="fas fa-users"></i>
+                    {{ total_alunos }} aluno{{ total_alunos|pluralize:"s" }}
+                </span>
+                <span class="stat">
+                    <i class="fas fa-clipboard-list"></i>
+                    {{ total_competencias }} competência{{ total_competencias|pluralize:"s" }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="turma-actions">
+            <a href="{% url 'teacher_portal:lancamento_notas' turma.id %}" class="btn btn-primary">
+                <i class="fas fa-edit"></i>
+                Lançar Notas
+            </a>
+            <a href="{% url 'teacher_portal:relatar_problema' turma.id %}" class="btn btn-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Relatar Problema
+            </a>
+            <a href="{% url 'teacher_portal:dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Grid de Informações -->
+    <div class="content-grid">
+        <!-- Lista de Alunos -->
+        <div class="card alunos-card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-users"></i>
+                    Lista de Alunos
+                </h3>
+                <span class="badge">{{ total_alunos }}</span>
+            </div>
+            <div class="card-body">
+                {% if alunos_da_turma %}
+                    <div class="alunos-list">
+                        {% for aluno in alunos_da_turma %}
+                            <div class="aluno-item">
+                                <div class="aluno-info">
+                                    <i class="fas fa-user-circle aluno-icon"></i>
+                                    <div class="aluno-details">
+                                        <strong>{{ aluno.nome_completo }}</strong>
+                                        {% if aluno.email %}
+                                            <small>{{ aluno.email }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <a href="{% url 'teacher_portal:lancamento_notas_aluno' turma.id aluno.id %}" 
+                                   class="btn-notas">
+                                    <i class="fas fa-edit"></i>
+                                    Notas
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-plus"></i>
+                        <p>Nenhum aluno cadastrado nesta turma</p>
+                        <button class="btn btn-primary" onclick="relatarProblema('ALUNO_FALTANDO')">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Relatar Problema
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Competências -->
+        <div class="card competencias-card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-clipboard-list"></i>
+                    Competências
+                </h3>
+                <span class="badge">{{ total_competencias }}</span>
+            </div>
+            <div class="card-body">
+                {% if competencias %}
+                    <div class="competencias-list">
+                        {% for competencia in competencias %}
+                            <div class="competencia-item">
+                                <div class="competencia-info">
+                                    <i class="fas fa-check-circle competencia-icon"></i>
+                                    <div class="competencia-details">
+                                        <strong>{{ competencia.nome }}</strong>
+                                        <small class="tipo-nota">{{ competencia.get_tipo_nota_display }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard"></i>
+                        <p>Nenhuma competência definida</p>
+                        <button class="btn btn-primary" onclick="relatarProblema('PROBLEMA_SISTEMA')">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Relatar Problema
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Problemas Recentes -->
+        <div class="card problemas-card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-bug"></i>
+                    Problemas Recentes
+                </h3>
+                <a href="{% url 'teacher_portal:meus_problemas' %}" class="view-all">Ver todos</a>
+            </div>
+            <div class="card-body">
+                {% if problemas_recentes %}
+                    <div class="problemas-list">
+                        {% for problema in problemas_recentes %}
+                            <div class="problema-item">
+                                <div class="problema-info">
+                                    <div class="problema-header">
+                                        <strong>{{ problema.titulo }}</strong>
+                                        <span class="badge badge-{{ problema.get_status_badge_class }}">
+                                            {{ problema.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <small class="problema-data">
+                                        {{ problema.data_relato|date:"d/m/Y H:i" }}
+                                    </small>
+                                    <p class="problema-tipo">
+                                        <i class="fas fa-tag"></i>
+                                        {{ problema.get_tipo_problema_display }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-check-circle"></i>
+                        <p>Nenhum problema relatado</p>
+                        <small>Sua turma está funcionando perfeitamente!</small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.detalhes-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.turma-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.turma-info h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.turma-nome {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    margin: 0 0 1rem 0;
+}
+
+.turma-stats {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0.9;
+}
+
+.turma-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-primary:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-warning {
+    background: #fed7aa;
+    color: #c2410c;
+    border: 1px solid #fdba74;
+}
+
+.btn-warning:hover {
+    background: #fdba74;
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 2rem;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.card-header {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a202c;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge {
+    background: #4299e1;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.view-all {
+    color: #4299e1;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.view-all:hover {
+    color: #3182ce;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.alunos-list, .competencias-list, .problemas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.aluno-item, .competencia-item, .problema-item {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.aluno-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.aluno-info, .competencia-info, .problema-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.aluno-icon, .competencia-icon {
+    color: #4299e1;
+    font-size: 1.5rem;
+}
+
+.aluno-details strong, .competencia-details strong {
+    display: block;
+    color: #1a202c;
+}
+
+.aluno-details small, .competencia-details small {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.tipo-nota {
+    background: #e2e8f0;
+    padding: 0.1rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.btn-notas {
+    background: #4299e1;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-notas:hover {
+    background: #3182ce;
+}
+
+.problema-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.problema-data {
+    color: #718096;
+    font-size: 0.75rem;
+}
+
+.problema-tipo {
+    margin: 0.5rem 0 0 0;
+    color: #4a5568;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge-warning {
+    background: #fbbf24;
+    color: #92400e;
+}
+
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #718096;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+}
+
+.empty-state small {
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .detalhes-container {
+        padding: 1rem;
+    }
+    
+    .turma-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+    }
+    
+    .turma-actions {
+        justify-content: center;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .turma-stats {
+        justify-content: center;
+    }
+    
+    .aluno-item {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+}
+</style>
+
+<script>
+function relatarProblema(tipoProblema) {
+    const url = "{% url 'teacher_portal:relatar_problema' turma.id %}";
+    const form = document.createElement('form');
+    form.method = 'GET';
+    form.action = url;
+    
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'tipo';
+    input.value = tipoProblema;
+    
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

@@ -2,15 +2,38 @@ from django.contrib import admin
 from django.contrib.admin import AdminSite
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from django.urls import path
-from django.shortcuts import render
-from core.models import Professor, Aluno, Turma, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema
+from django.urls import path, reverse_lazy
+from django.shortcuts import render, redirect
+from django.contrib.auth import logout
+from django.http import HttpResponseRedirect
+from core.models import Professor, Aluno, Turma, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema, ProblemaRelatado, AuditLog, SystemMetrics
 from admin_panel.views import analisar_problemas_sistema
 
 class CustomAdminSite(AdminSite):
     site_header = 'Coordenação Acadêmica'
     site_title = 'Sistema de Gestão Educacional'
     index_title = 'Dashboard Administrativo'
+
+    def logout(self, request, extra_context=None):
+        """
+        Override do logout para redirecionar para a página de login do admin
+        """
+        if request.method == 'POST':
+            logout(request)
+            return HttpResponseRedirect(reverse_lazy('admin:login'))
+        
+        # Se for GET, mostra a página de confirmação de logout
+        context = {
+            'title': 'Logout',
+            'site_title': self.site_title,
+            'site_header': self.site_header,
+            'site_url': '/',
+            'has_permission': request.user.is_active and request.user.is_staff,
+        }
+        if extra_context:
+            context.update(extra_context)
+            
+        return render(request, 'admin/logged_out.html', context)
 
     def index(self, request, extra_context=None):
         """
@@ -113,7 +136,8 @@ class CustomAdminSite(AdminSite):
 admin_site = CustomAdminSite(name='custom_admin')
 
 # Registrar todos os modelos do core.admin.py no admin customizado
-from core.admin import ProfessorUserAdmin, TipoTurmaAdmin, TurmaAdmin
+from core.admin import ProfessorUserAdmin, TipoTurmaAdmin, TurmaAdmin, ProblemaRelatadoAdmin, AuditLogAdmin, SystemMetricsAdmin
+from core.models import AuditLog, SystemMetrics
 
 # Registrar User com customização
 admin_site.register(User, ProfessorUserAdmin)
@@ -126,3 +150,8 @@ admin_site.register(Aluno)
 admin_site.register(Competencia)
 admin_site.register(LancamentoDeNota)
 admin_site.register(ConfiguracaoSistema)
+admin_site.register(ProblemaRelatado, ProblemaRelatadoAdmin)
+
+# Registrar modelos de auditoria
+admin_site.register(AuditLog, AuditLogAdmin)
+admin_site.register(SystemMetrics, SystemMetricsAdmin)

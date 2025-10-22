@@ -1,0 +1,574 @@
+{% extends "teacher_portal/base.html" %}
+{% load static %}
+
+{% block title %}Meus Problemas Relatados{% endblock %}
+
+{% block content %}
+<div class="problemas-container">
+    <!-- Header -->
+    <div class="problemas-header">
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-bug"></i>
+                Meus Problemas Relatados
+            </h1>
+            <p class="header-description">
+                Acompanhe o status dos problemas que você relatou
+            </p>
+        </div>
+        <a href="{% url 'teacher_portal:dashboard' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Voltar ao Dashboard
+        </a>
+    </div>
+
+    <!-- Estatísticas -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-icon">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ total_problemas }}</h3>
+                <p>Total de Problemas</p>
+            </div>
+        </div>
+        
+        <div class="stat-card pendente">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ problemas_pendentes }}</h3>
+                <p>Aguardando Análise</p>
+            </div>
+        </div>
+        
+        <div class="stat-card resolvido">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ problemas_resolvidos }}</h3>
+                <p>Resolvidos</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Problemas -->
+    <div class="problemas-content">
+        {% if problemas %}
+            <div class="problemas-list">
+                {% for problema in problemas %}
+                    <div class="problema-card">
+                        <div class="problema-header">
+                            <div class="problema-title">
+                                <h3>{{ problema.titulo }}</h3>
+                                <div class="problema-meta">
+                                    <span class="turma-info">
+                                        <i class="fas fa-chalkboard"></i>
+                                        {{ problema.turma.nome }}
+                                    </span>
+                                    <span class="data-info">
+                                        <i class="fas fa-calendar"></i>
+                                        {{ problema.data_relato|date:"d/m/Y H:i" }}
+                                    </span>
+                                    {% if problema.aluno %}
+                                        <span class="aluno-info">
+                                            <i class="fas fa-user"></i>
+                                            {{ problema.aluno.nome_completo }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="problema-badges">
+                                <span class="badge badge-tipo">
+                                    {{ problema.get_tipo_problema_display }}
+                                </span>
+                                <span class="badge badge-{{ problema.get_status_badge_class }}">
+                                    {{ problema.get_status_display }}
+                                </span>
+                                <span class="badge badge-prioridade badge-{{ problema.get_prioridade_badge_class }}">
+                                    {{ problema.get_prioridade_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="problema-body">
+                            <div class="problema-descricao">
+                                <h4>Descrição:</h4>
+                                <p>{{ problema.descricao|linebreaks }}</p>
+                            </div>
+                            
+                            {% if problema.resposta_admin %}
+                                <div class="problema-resposta">
+                                    <h4>
+                                        <i class="fas fa-reply"></i>
+                                        Resposta do Administrador:
+                                    </h4>
+                                    <div class="resposta-content">
+                                        <p>{{ problema.resposta_admin|linebreaks }}</p>
+                                        {% if problema.data_resolucao %}
+                                            <small class="data-resolucao">
+                                                <i class="fas fa-clock"></i>
+                                                Resolvido em {{ problema.data_resolucao|date:"d/m/Y H:i" }}
+                                                {% if problema.resolvido_por %}
+                                                    por {{ problema.resolvido_por.get_full_name|default:problema.resolvido_por.username }}
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="problema-footer">
+                            <div class="protocolo">
+                                <small>
+                                    <i class="fas fa-hashtag"></i>
+                                    Protocolo: {{ problema.id }}
+                                </small>
+                            </div>
+                            
+                            {% if problema.status == 'PENDENTE' or problema.status == 'EM_ANALISE' %}
+                                <div class="problema-actions">
+                                    <button class="btn btn-sm btn-secondary" onclick="copiarProtocolo({{ problema.id }})">
+                                        <i class="fas fa-copy"></i>
+                                        Copiar Protocolo
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3>Nenhum problema relatado</h3>
+                <p>Você ainda não relatou nenhum problema. Quando encontrar alguma dificuldade, use o botão "Relatar Problema" nas suas turmas.</p>
+                <a href="{% url 'teacher_portal:dashboard' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i>
+                    Voltar às Turmas
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.problemas-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.problemas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.header-content h1 {
+    color: #1a202c;
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-content h1 i {
+    color: #f56565;
+}
+
+.header-description {
+    color: #4a5568;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-card.total .stat-icon {
+    background: linear-gradient(135deg, #4299e1, #3182ce);
+}
+
+.stat-card.pendente .stat-icon {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.stat-card.resolvido .stat-icon {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0;
+}
+
+.stat-content p {
+    color: #718096;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.problemas-content {
+    margin-top: 2rem;
+}
+
+.problemas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.problema-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.problema-header {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.problema-title h3 {
+    color: #1a202c;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+}
+
+.problema-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.problema-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.problema-badges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-end;
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-tipo {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.badge-warning {
+    background: #fbbf24;
+    color: #92400e;
+}
+
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-info {
+    background: #3b82f6;
+    color: white;
+}
+
+.badge-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.badge-critical {
+    background: #dc2626;
+    color: white;
+}
+
+.problema-body {
+    padding: 1.5rem;
+}
+
+.problema-descricao h4,
+.problema-resposta h4 {
+    color: #374151;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+}
+
+.problema-descricao p {
+    color: #4a5568;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.problema-resposta {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.resposta-content {
+    background: #f0f9ff;
+    border: 1px solid #e0f2fe;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.resposta-content p {
+    color: #0369a1;
+    margin: 0 0 0.5rem 0;
+}
+
+.data-resolucao {
+    color: #64748b;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.problema-footer {
+    background: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.protocolo small {
+    color: #718096;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #718096;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #374151;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin: 0 0 2rem 0;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-primary {
+    background: #4299e1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #3182ce;
+}
+
+@media (max-width: 768px) {
+    .problemas-container {
+        padding: 1rem;
+    }
+    
+    .problemas-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .problema-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .problema-badges {
+        align-items: stretch;
+    }
+    
+    .problema-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .problema-footer {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+}
+</style>
+
+<script>
+function copiarProtocolo(protocoloId) {
+    const texto = `Protocolo: #${protocoloId}`;
+    
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(texto).then(() => {
+            mostrarNotificacao('Protocolo copiado!', 'success');
+        }).catch(() => {
+            fallbackCopyText(texto);
+        });
+    } else {
+        fallbackCopyText(texto);
+    }
+}
+
+function fallbackCopyText(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        mostrarNotificacao('Protocolo copiado!', 'success');
+    } catch (err) {
+        mostrarNotificacao('Erro ao copiar protocolo', 'error');
+    }
+    document.body.removeChild(textArea);
+}
+
+function mostrarNotificacao(mensagem, tipo) {
+    const notification = document.createElement('div');
+    notification.className = `notification ${tipo}`;
+    notification.textContent = mensagem;
+    
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    
+    if (tipo === 'success') {
+        notification.style.background = '#10b981';
+    } else {
+        notification.style.background = '#ef4444';
+    }
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+</script>
+{% endblock %}

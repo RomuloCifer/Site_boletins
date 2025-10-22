@@ -18,7 +18,12 @@
     {% if user.is_authenticated %}
         Bem-vindo, <strong>{{ user.get_full_name|default:user.username }}</strong>.
         <a href="{% url 'admin:password_change' %}">Alterar senha</a> / 
-        <a href="{% url 'admin:logout' %}">Sair</a>
+        <form method="post" action="{% url 'admin:logout' %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; color: #79aec8; text-decoration: underline; cursor: pointer; font-size: inherit; padding: 0; margin: 0;">
+                Sair
+            </button>
+        </form>
     {% endif %}
 </div>
 {% endblock %}
