@@ -512,7 +512,7 @@ Este projeto está licenciado sob a **MIT License** - veja o arquivo [LICENSE](L
 ## 📞 Contato
 
 **Desenvolvedor**: RomuloCifer  
-**Email**: [seu-email@exemplo.com](ou_iy@hotmail.com  )  
+**Email**: [seu-email@exemplo.com](ciferomulo@gmail.com )  
 **GitHub**: [@RomuloCifer](https://github.com/RomuloCifer)  
 **LinkedIn**: [Seu LinkedIn](https://www.linkedin.com/in/romulo-portugal-070781363)
 
