@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="dashboard-admin">
-    <h1>{{ title }}</h1>
     
     <!-- Mensagens -->
     {% if messages %}
@@ -184,63 +183,218 @@
 </div>
 
 <style>
-.card {
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    margin-bottom: 20px;
+/* Estilos específicos para a página de tipos de turma */
+.dashboard-admin {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+    color: #1a202c !important;
 }
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #ddd;
-    padding: 15px;
-    border-radius: 8px 8px 0 0;
-}
-.card-body {
-    padding: 15px;
-}
-.alert {
-    padding: 10px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-.alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
-.alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
-.alert-warning { background-color: #fff3cd; border-color: #ffeaa7; color: #856404; }
 
+.card {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    margin-bottom: 20px !important;
+    background: white !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #2d3748, #4a5568) !important;
+    color: white !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 15px !important;
+    border-radius: 8px 8px 0 0 !important;
+    font-weight: 600 !important;
+}
+
+.card-header h3, .card-header h4, .card-header h5 {
+    color: white !important;
+    margin: 0 !important;
+    font-weight: 600 !important;
+}
+
+.card-body {
+    padding: 20px !important;
+    color: #2d3748 !important;
+    background: white !important;
+}
+
+/* Formulários */
+.form-group label {
+    color: #4a5568 !important;
+    font-weight: 500 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.form-control {
+    padding: 8px 12px !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 6px !important;
+    background: white !important;
+    color: #2d3748 !important;
+    transition: border-color 0.2s ease !important;
+}
+
+.form-control:focus {
+    border-color: #3182ce !important;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1) !important;
+    outline: none !important;
+}
+
+/* Área de seleção de competências */
 .competencias-selection {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 4px;
-    background-color: #f9f9f9;
+    max-height: 300px !important;
+    overflow-y: auto !important;
+    border: 2px solid #e2e8f0 !important;
+    padding: 15px !important;
+    border-radius: 8px !important;
+    background: #f7fafc !important;
 }
 
 .competencia-checkbox {
-    margin-bottom: 8px;
-    padding: 5px;
+    margin-bottom: 10px !important;
+    padding: 8px !important;
+    border-radius: 4px !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.competencia-checkbox:hover {
+    background: rgba(49, 130, 206, 0.1) !important;
 }
 
 .competencia-checkbox input[type="checkbox"] {
-    margin-right: 8px;
+    margin-right: 10px !important;
+    transform: scale(1.1) !important;
 }
 
+.competencia-checkbox label {
+    color: #2d3748 !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    margin: 0 !important;
+}
+
+/* Tabelas */
+.table {
+    margin-bottom: 0 !important;
+    background: white !important;
+    color: #2d3748 !important;
+}
+
+.table thead th {
+    background: #f7fafc !important;
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #e2e8f0 !important;
+    padding: 12px !important;
+}
+
+.table tbody td {
+    padding: 12px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #4a5568 !important;
+}
+
+.table tbody tr:hover {
+    background: #f7fafc !important;
+}
+
+/* Badges */
 .competencias-list .badge {
-    display: inline-block;
-    margin: 2px;
-    padding: 4px 8px;
-    border-radius: 12px;
+    display: inline-block !important;
+    margin: 2px !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
 }
 
 .badge-info {
-    background-color: #17a2b8;
-    color: white;
+    background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+    color: white !important;
 }
 
-.table { margin-bottom: 0; }
-.btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; }
-.btn-success { background-color: #28a745; color: white; }
-.form-control { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; }
+/* Botões */
+.btn {
+    padding: 8px 16px !important;
+    border-radius: 6px !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #38a169, #2f855a) !important;
+    color: white !important;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #2f855a, #276749) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3) !important;
+}
+
+/* Alertas */
+.alert {
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    margin-bottom: 20px !important;
+    border: none !important;
+    font-weight: 500 !important;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4) !important;
+    color: #22543d !important;
+    border-left: 4px solid #38a169 !important;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2) !important;
+    color: #742a2a !important;
+    border-left: 4px solid #e53e3e !important;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, #fefcbf, #faf089) !important;
+    color: #744210 !important;
+    border-left: 4px solid #d69e2e !important;
+}
+
+/* Text utilities */
+.text-muted {
+    color: #718096 !important;
+}
+
+/* Links */
+a {
+    color: #3182ce !important;
+    text-decoration: none !important;
+}
+
+a:hover {
+    color: #2c5282 !important;
+    text-decoration: underline !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .dashboard-admin {
+        padding: 1rem !important;
+        margin: 0.5rem !important;
+    }
+    
+    .card-body {
+        padding: 15px !important;
+    }
+    
+    .table-responsive {
+        font-size: 0.9rem !important;
+    }
+}
 </style>
 
 {% endblock %}
