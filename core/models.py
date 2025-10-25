@@ -325,7 +325,7 @@ class ConfiguracaoSistema(models.Model):
 
 class ProblemaRelatado(models.Model):
     """
-    Modelo para armazenar problemas relatados pelos professores
+    Modelo para armazenar problemas relatados pelos professores e detectados automaticamente
     """
     TIPO_PROBLEMA_CHOICES = [
         ('ALUNO_DUPLICADO', 'Aluno Duplicado'),
@@ -333,6 +333,8 @@ class ProblemaRelatado(models.Model):
         ('TURMA_ERRADA', 'Aluno na Turma Errada'),
         ('DADOS_INCORRETOS', 'Dados do Aluno Incorretos'),
         ('PROBLEMA_SISTEMA', 'Problema no Sistema'),
+        ('TURMA_SEM_PROFESSOR', 'Turma sem Professor'),
+        ('PROFESSOR_SEM_TURMA', 'Professor sem Turma'),
         ('OUTRO', 'Outro'),
     ]
     
@@ -350,10 +352,18 @@ class ProblemaRelatado(models.Model):
         ('CRITICA', 'Crítica'),
     ]
     
+    ORIGEM_CHOICES = [
+        ('PROFESSOR', 'Relatado por Professor'),
+        ('SISTEMA', 'Detectado Automaticamente'),
+    ]
+    
     # Informações básicas
-    professor = models.ForeignKey(Professor, on_delete=models.CASCADE, verbose_name="Professor")
-    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name="Turma")
+    professor = models.ForeignKey(Professor, on_delete=models.CASCADE, verbose_name="Professor", null=True, blank=True)
+    turma = models.ForeignKey(Turma, on_delete=models.CASCADE, verbose_name="Turma", null=True, blank=True)
     aluno = models.ForeignKey(Aluno, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Aluno (se aplicável)")
+    
+    # Origem do problema
+    origem = models.CharField(max_length=10, choices=ORIGEM_CHOICES, default='PROFESSOR', verbose_name="Origem")
     
     # Detalhes do problema
     tipo_problema = models.CharField(max_length=20, choices=TIPO_PROBLEMA_CHOICES, verbose_name="Tipo do Problema")
@@ -376,8 +386,19 @@ class ProblemaRelatado(models.Model):
     
     def __str__(self):
         tipo_display = dict(self.TIPO_PROBLEMA_CHOICES).get(self.tipo_problema, self.tipo_problema)
-        professor_nome = self.professor.user.get_full_name() or self.professor.user.username
-        return f"{tipo_display} - {self.turma.nome} ({professor_nome})"
+        origem_display = dict(self.ORIGEM_CHOICES).get(self.origem, self.origem)
+        
+        if self.professor:
+            professor_nome = self.professor.user.get_full_name() or self.professor.user.username
+        else:
+            professor_nome = "Sistema"
+            
+        if self.turma:
+            turma_nome = self.turma.nome
+        else:
+            turma_nome = "Geral"
+            
+        return f"[{origem_display}] {tipo_display} - {turma_nome} ({professor_nome})"
     
     class Meta:
         verbose_name = "Problema Relatado"

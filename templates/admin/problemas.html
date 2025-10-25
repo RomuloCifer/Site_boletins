@@ -3,6 +3,11 @@
 
 {% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
 
+{% block extrahead %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'admin_panel/css/problemas.css' %}">
+{% endblock %}
+
 {% block breadcrumbs %}
 <div class="breadcrumbs">
 <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
@@ -190,6 +195,151 @@
                             <i class="fas fa-clipboard-list"></i>
                             Revisar Professores
                         </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Separação por Origem -->
+    <div class="origin-separation-section">
+        <h2><i class="fas fa-layer-group"></i> Problemas por Origem</h2>
+        
+        <div class="origin-cards">
+            <!-- Card Problemas Relatados por Professores -->
+            <div class="origin-card professor-card">
+                <div class="card-header">
+                    <div class="origin-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <div class="origin-info">
+                        <h3>Relatados por Professores</h3>
+                        <span class="origin-count">{{ problemas_sistema.total_por_origem.professores }} problema{{ problemas_sistema.total_por_origem.professores|pluralize:"s" }}</span>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if problemas_sistema.total_por_origem.professores > 0 %}
+                        <div class="priority-breakdown">
+                            {% if problemas_sistema.professores.alta > 0 %}
+                                <div class="priority-item alta">
+                                    <span class="priority-badge alta">{{ problemas_sistema.professores.alta }}</span>
+                                    <span>Alta Prioridade</span>
+                                </div>
+                            {% endif %}
+                            {% if problemas_sistema.professores.media > 0 %}
+                                <div class="priority-item media">
+                                    <span class="priority-badge media">{{ problemas_sistema.professores.media }}</span>
+                                    <span>Média Prioridade</span>
+                                </div>
+                            {% endif %}
+                            {% if problemas_sistema.professores.baixa > 0 %}
+                                <div class="priority-item baixa">
+                                    <span class="priority-badge baixa">{{ problemas_sistema.professores.baixa }}</span>
+                                    <span>Baixa Prioridade</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="recent-problems">
+                            <h4>Últimos Relatos:</h4>
+                            {% for problema in problemas_sistema.problemas_detalhados.todos_professores|slice:":3" %}
+                                <div class="problem-item">
+                                    <div class="problem-info">
+                                        <strong>{{ problema.titulo }}</strong>
+                                        <span class="problem-meta">
+                                            por {{ problema.professor.user.get_full_name|default:problema.professor.user.username }}
+                                            em {{ problema.data_relato|date:"d/m/Y H:i" }}
+                                        </span>
+                                    </div>
+                                    <span class="priority-badge {{ problema.prioridade|lower }}">{{ problema.get_prioridade_display }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="{% url 'admin:core_problemarelatado_changelist' %}?origem=PROFESSOR" class="action-btn primary">
+                                <i class="fas fa-list"></i>
+                                Ver Todos os Relatos
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="no-problems">
+                            <i class="fas fa-thumbs-up"></i>
+                            <p>Nenhum problema relatado pelos professores</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card Problemas Detectados pelo Sistema -->
+            <div class="origin-card system-card">
+                <div class="card-header">
+                    <div class="origin-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="origin-info">
+                        <h3>Detectados Automaticamente</h3>
+                        <span class="origin-count">{{ problemas_sistema.total_por_origem.sistema }} problema{{ problemas_sistema.total_por_origem.sistema|pluralize:"s" }}</span>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if problemas_sistema.total_por_origem.sistema > 0 %}
+                        <div class="priority-breakdown">
+                            {% if problemas_sistema.sistema.alta > 0 %}
+                                <div class="priority-item alta">
+                                    <span class="priority-badge alta">{{ problemas_sistema.sistema.alta }}</span>
+                                    <span>Alta Prioridade</span>
+                                </div>
+                            {% endif %}
+                            {% if problemas_sistema.sistema.media > 0 %}
+                                <div class="priority-item media">
+                                    <span class="priority-badge media">{{ problemas_sistema.sistema.media }}</span>
+                                    <span>Média Prioridade</span>
+                                </div>
+                            {% endif %}
+                            {% if problemas_sistema.sistema.baixa > 0 %}
+                                <div class="priority-item baixa">
+                                    <span class="priority-badge baixa">{{ problemas_sistema.sistema.baixa }}</span>
+                                    <span>Baixa Prioridade</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="system-problems-breakdown">
+                            <h4>Tipos de Problemas:</h4>
+                            {% if problemas_sistema.alunos_duplicados.total > 0 %}
+                                <div class="problem-type">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ problemas_sistema.alunos_duplicados.total }} Aluno{{ problemas_sistema.alunos_duplicados.total|pluralize:"s" }} Duplicado{{ problemas_sistema.alunos_duplicados.total|pluralize:"s" }}</span>
+                                </div>
+                            {% endif %}
+                            {% if problemas_sistema.turmas_sem_professor > 0 %}
+                                <div class="problem-type">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                    <span>{{ problemas_sistema.turmas_sem_professor }} Turma{{ problemas_sistema.turmas_sem_professor|pluralize:"s" }} sem Professor</span>
+                                </div>
+                            {% endif %}
+                            {% if problemas_sistema.professores_sem_turma > 0 %}
+                                <div class="problem-type">
+                                    <i class="fas fa-user-tie"></i>
+                                    <span>{{ problemas_sistema.professores_sem_turma }} Professor{{ problemas_sistema.professores_sem_turma|pluralize:"es" }} sem Turma</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-actions">
+                            <a href="{% url 'admin:core_problemarelatado_changelist' %}?origem=SISTEMA" class="action-btn primary">
+                                <i class="fas fa-search"></i>
+                                Ver Problemas do Sistema
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="no-problems">
+                            <i class="fas fa-check-circle"></i>
+                            <p>Sistema funcionando perfeitamente</p>
+                        </div>
                     {% endif %}
                 </div>
             </div>

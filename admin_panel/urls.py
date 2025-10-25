@@ -39,6 +39,17 @@ urlpatterns = [
         views.gerenciar_tipos_turma_view,
         name='gerenciar_tipos_turma'
     ),
+    # URLs para gerenciar turmas
+    path(
+        'turmas/nova/',
+        views.nova_turma_view,
+        name='nova_turma'
+    ),
+    path(
+        'turmas/configurar/<int:turma_id>/',
+        views.configurar_turma_view,
+        name='configurar_turma'
+    ),
     # Dashboard de analytics
     path(
         'analytics/',

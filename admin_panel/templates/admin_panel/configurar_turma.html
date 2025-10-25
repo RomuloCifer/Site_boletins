@@ -1,0 +1,561 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="configurar-turma-container">
+    <!-- Cabeçalho -->
+    <div class="header-section">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'admin_panel:dashboard' %}" class="breadcrumb-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <a href="{% url 'admin_panel:nova_turma' %}" class="breadcrumb-link">Nova Turma</a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">Configurar</span>
+        </div>
+        
+        <div class="turma-header">
+            <div class="turma-info">
+                <h1 class="page-title">
+                    <i class="fas fa-cogs"></i>
+                    {{ turma.nome }}
+                </h1>
+                <div class="turma-stats">
+                    <span class="stat-item">
+                        <i class="fas fa-users"></i>
+                        {{ total_alunos }} aluno{{ total_alunos|pluralize }}
+                    </span>
+                    <span class="stat-item">
+                        <i class="fas fa-tasks"></i>
+                        {{ competencias|length }} competência{{ competencias|length|pluralize }}
+                    </span>
+                </div>
+            </div>
+            <div class="success-badge">
+                <i class="fas fa-check-circle"></i>
+                Turma criada!
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Próximos passos -->
+    <div class="next-steps-section">
+        <h2><i class="fas fa-route"></i> Próximos Passos</h2>
+        <p>Sua turma foi criada com sucesso! Agora você pode configurar os detalhes e adicionar alunos.</p>
+        
+        <div class="steps-grid">
+            <!-- Adicionar Alunos -->
+            <div class="step-card priority">
+                <div class="step-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="step-content">
+                    <h3>Adicionar Alunos</h3>
+                    <p>Importe alunos via CSV ou adicione manualmente</p>
+                    <div class="step-actions">
+                        <a href="{% url 'admin_panel:importar_alunos' %}?turma={{ turma.id }}" class="btn btn-primary">
+                            <i class="fas fa-file-csv"></i> Importar CSV
+                        </a>
+                        <a href="/admin/core/aluno/add/?turma={{ turma.id }}" class="btn btn-secondary" target="_blank">
+                            <i class="fas fa-plus"></i> Adicionar Manual
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Definir Professor -->
+            {% if not turma.professor_responsavel %}
+            <div class="step-card">
+                <div class="step-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="step-content">
+                    <h3>Definir Professor</h3>
+                    <p>Atribua um professor responsável pela turma</p>
+                    <div class="step-actions">
+                        <a href="/admin/core/turma/{{ turma.id }}/change/" class="btn btn-secondary" target="_blank">
+                            <i class="fas fa-edit"></i> Editar Turma
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Ver Detalhes -->
+            <div class="step-card">
+                <div class="step-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="step-content">
+                    <h3>Gerenciar Turma</h3>
+                    <p>Acompanhe progresso e lance notas</p>
+                    <div class="step-actions">
+                        <a href="{% url 'admin_panel:detalhes_turma' turma.id %}" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i> Ver Detalhes
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voltar ao Dashboard -->
+            <div class="step-card">
+                <div class="step-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="step-content">
+                    <h3>Finalizar</h3>
+                    <p>Voltar ao dashboard administrativo</p>
+                    <div class="step-actions">
+                        <a href="{% url 'admin_panel:dashboard' %}" class="btn btn-outline">
+                            <i class="fas fa-arrow-left"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações da turma -->
+    <div class="turma-info-section">
+        <div class="info-grid">
+            <!-- Competências -->
+            <div class="info-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-tasks"></i> Competências da Turma</h3>
+                </div>
+                <div class="card-body">
+                    {% if competencias %}
+                        <div class="competencias-list">
+                            {% for competencia in competencias %}
+                                <div class="competencia-item">
+                                    <span class="competencia-nome">{{ competencia.nome }}</span>
+                                    <span class="competencia-tipo">{{ competencia.get_tipo_nota_display }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="empty-state">
+                            <i class="fas fa-info-circle"></i>
+                            Esta turma ainda não tem competências definidas.
+                            <a href="/admin/core/turma/{{ turma.id }}/change/" target="_blank">Editar turma</a>
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Resumo -->
+            <div class="info-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-info-circle"></i> Resumo</h3>
+                </div>
+                <div class="card-body">
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <label>Tipo:</label>
+                            <span>{{ turma.tipo_turma.nome }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Identificador:</label>
+                            <span>{{ turma.identificador_turma }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Professor:</label>
+                            <span>
+                                {% if turma.professor_responsavel %}
+                                    {{ turma.professor_responsavel.user.get_full_name|default:turma.professor_responsavel.user.username }}
+                                {% else %}
+                                    <em>Não definido</em>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="summary-item">
+                            <label>Total de Alunos:</label>
+                            <span>{{ total_alunos }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container principal */
+.configurar-turma-container {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+    color: #1a202c !important;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Cabeçalho */
+.header-section {
+    margin-bottom: 2rem;
+}
+
+.breadcrumb-nav {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: #3182ce !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #2c5282 !important;
+}
+
+.breadcrumb-separator {
+    margin: 0 0.5rem;
+    color: #718096;
+}
+
+.breadcrumb-current {
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.turma-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #2d3748, #4a5568) !important;
+    color: white !important;
+    padding: 2rem !important;
+    border-radius: 12px !important;
+    margin-bottom: 2rem;
+}
+
+.turma-info h1 {
+    color: white !important;
+    margin: 0 0 1rem 0 !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.turma-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.success-badge {
+    background: #38a169 !important;
+    color: white !important;
+    padding: 1rem 1.5rem !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3) !important;
+}
+
+/* Próximos passos */
+.next-steps-section {
+    margin-bottom: 3rem;
+}
+
+.next-steps-section h2 {
+    color: #2d3748 !important;
+    font-size: 1.5rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.next-steps-section p {
+    color: #718096 !important;
+    margin-bottom: 2rem !important;
+}
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.step-card {
+    background: white !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    border: 2px solid #e2e8f0 !important;
+    transition: all 0.3s ease !important;
+}
+
+.step-card.priority {
+    border-color: #3182ce !important;
+    background: linear-gradient(135deg, rgba(49, 130, 206, 0.05), rgba(49, 130, 206, 0.02)) !important;
+}
+
+.step-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.step-icon {
+    font-size: 2.5rem !important;
+    color: #3182ce !important;
+    margin-bottom: 1rem !important;
+}
+
+.step-content h3 {
+    color: #2d3748 !important;
+    margin: 0 0 0.5rem 0 !important;
+    font-weight: 600 !important;
+}
+
+.step-content p {
+    color: #718096 !important;
+    margin-bottom: 1.5rem !important;
+    font-size: 0.95rem !important;
+}
+
+.step-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* Botões */
+.btn {
+    padding: 0.6rem 1.2rem !important;
+    border-radius: 6px !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    text-decoration: none !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2c5282, #2a4365) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3) !important;
+}
+
+.btn-secondary {
+    background: #e2e8f0 !important;
+    color: #4a5568 !important;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0 !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-outline {
+    background: transparent !important;
+    color: #3182ce !important;
+    border: 2px solid #3182ce !important;
+}
+
+.btn-outline:hover {
+    background: #3182ce !important;
+    color: white !important;
+}
+
+/* Informações da turma */
+.turma-info-section {
+    margin-top: 2rem;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+.info-card {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden;
+}
+
+.card-header {
+    background: #f7fafc !important;
+    padding: 1.5rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.card-header h3 {
+    color: #2d3748 !important;
+    margin: 0 !important;
+    font-weight: 600 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.card-body {
+    padding: 1.5rem !important;
+}
+
+/* Competências */
+.competencias-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.competencia-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem !important;
+    background: #f7fafc !important;
+    border-radius: 8px !important;
+    border-left: 4px solid #3182ce !important;
+}
+
+.competencia-nome {
+    font-weight: 500 !important;
+    color: #2d3748 !important;
+}
+
+.competencia-tipo {
+    font-size: 0.85rem !important;
+    color: #718096 !important;
+    background: #e2e8f0 !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 12px !important;
+}
+
+/* Resumo */
+.summary-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.summary-item label {
+    font-weight: 600 !important;
+    color: #4a5568 !important;
+}
+
+.summary-item span {
+    color: #2d3748 !important;
+}
+
+.empty-state {
+    color: #718096 !important;
+    text-align: center !important;
+    padding: 2rem !important;
+}
+
+.empty-state a {
+    color: #3182ce !important;
+    text-decoration: none !important;
+}
+
+.empty-state a:hover {
+    text-decoration: underline !important;
+}
+
+/* Alertas */
+.alert {
+    padding: 1rem 1.25rem !important;
+    border-radius: 8px !important;
+    margin-bottom: 1.5rem !important;
+    border: none !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4) !important;
+    color: #22543d !important;
+    border-left: 4px solid #38a169 !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .configurar-turma-container {
+        padding: 1rem !important;
+        margin: 0.5rem !important;
+    }
+    
+    .turma-header {
+        flex-direction: column !important;
+        gap: 1rem !important;
+        text-align: center !important;
+    }
+    
+    .turma-stats {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .steps-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .step-actions {
+        flex-direction: column !important;
+    }
+}
+</style>
+
+{% endblock %}

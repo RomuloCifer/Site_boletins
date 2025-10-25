@@ -103,104 +103,144 @@ def detectar_professores_sem_turma():
 
 def analisar_problemas_sistema():
     """Analisa todos os problemas do sistema e retorna estatísticas organizadas por prioridade"""
-    # Detecta diferentes tipos de problemas automáticos
-    alunos_duplicados = detectar_alunos_duplicados()
-    turmas_sem_professor = detectar_turmas_sem_professor()
-    professores_sem_turma = detectar_professores_sem_turma()
-    
-    # Importa problemas relatados pelos professores
+    # Importa problemas relatados e detectados automaticamente
     from core.models import ProblemaRelatado
-    problemas_relatados = ProblemaRelatado.objects.filter(status__in=['PENDENTE', 'EM_ANALISE'])
+    from core.utils import ProblemaSystemaManager
     
-    # Organiza problemas por prioridade
+    # Detecta e cria problemas automáticos
+    ProblemaSystemaManager.detectar_e_criar_problemas_automaticos()
+    
+    # Busca todos os problemas por origem
+    problemas_professores = ProblemaRelatado.objects.filter(
+        origem='PROFESSOR',
+        status__in=['PENDENTE', 'EM_ANALISE']
+    ).select_related('professor__user', 'turma', 'aluno')
+    
+    problemas_sistema = ProblemaRelatado.objects.filter(
+        origem='SISTEMA',
+        status__in=['PENDENTE', 'EM_ANALISE']
+    ).select_related('professor__user', 'turma', 'aluno')
+    
+    # Organiza problemas por prioridade e origem
     problemas_por_prioridade = {
-        'alta': [],
-        'media': [],
-        'baixa': []
+        'alta': {'professores': [], 'sistema': []},
+        'media': {'professores': [], 'sistema': []},
+        'baixa': {'professores': [], 'sistema': []}
     }
     
-    # Classifica alunos duplicados
-    for problema in alunos_duplicados:
-        problemas_por_prioridade[problema['severidade']].append(problema)
-    
-    # Turmas sem professor são sempre alta prioridade
-    for problema in turmas_sem_professor:
-        problemas_por_prioridade['alta'].append(problema)
-    
-    # Professores sem turma são sempre baixa prioridade
-    for problema in professores_sem_turma:
-        problemas_por_prioridade['baixa'].append(problema)
-    
-    # Adiciona problemas relatados pelos professores
-    for problema_relatado in problemas_relatados:
-        if problema_relatado.prioridade == 'CRITICA' or problema_relatado.prioridade == 'ALTA':
-            severidade = 'alta'
-        elif problema_relatado.prioridade == 'MEDIA':
-            severidade = 'media'
+    # Mapear prioridades para categorias
+    def mapear_prioridade(prioridade):
+        if prioridade in ['CRITICA', 'ALTA']:
+            return 'alta'
+        elif prioridade == 'MEDIA':
+            return 'media'
         else:
-            severidade = 'baixa'
-        
-        problemas_por_prioridade[severidade].append({
+            return 'baixa'
+    
+    # Organizar problemas de professores
+    for problema in problemas_professores:
+        categoria = mapear_prioridade(problema.prioridade)
+        problemas_por_prioridade[categoria]['professores'].append({
             'tipo': 'problema_relatado',
-            'severidade': severidade,
-            'descricao': f'Professor relatou: {problema_relatado.titulo}',
-            'detalhes': {
-                'problema_relatado': problema_relatado,
-                'professor': problema_relatado.professor,
-                'turma': problema_relatado.turma,
-                'data_relato': problema_relatado.data_relato,
-                'tipo_problema': problema_relatado.get_tipo_problema_display()
-            }
+            'id': problema.id,
+            'titulo': problema.titulo,
+            'descricao': problema.descricao,
+            'professor': problema.professor,
+            'turma': problema.turma,
+            'data_relato': problema.data_relato,
+            'tipo_problema': problema.get_tipo_problema_display(),
+            'prioridade': problema.prioridade,
+            'objeto': problema
         })
     
-    # Conta totais por prioridade
-    total_alta = len(problemas_por_prioridade['alta'])
-    total_media = len(problemas_por_prioridade['media'])
-    total_baixa = len(problemas_por_prioridade['baixa'])
-    total_geral = total_alta + total_media + total_baixa
+    # Organizar problemas do sistema
+    for problema in problemas_sistema:
+        categoria = mapear_prioridade(problema.prioridade)
+        problemas_por_prioridade[categoria]['sistema'].append({
+            'tipo': 'problema_sistema',
+            'id': problema.id,
+            'titulo': problema.titulo,
+            'descricao': problema.descricao,
+            'turma': problema.turma,
+            'aluno': problema.aluno,
+            'data_relato': problema.data_relato,
+            'tipo_problema': problema.get_tipo_problema_display(),
+            'prioridade': problema.prioridade,
+            'objeto': problema
+        })
     
-    # Conta específicos para compatibilidade com template
-    duplicados_alta = len([p for p in alunos_duplicados if p['severidade'] == 'alta'])
-    duplicados_media = len([p for p in alunos_duplicados if p['severidade'] == 'media'])
+    # Contar totais
+    total_professores = problemas_professores.count()
+    total_sistema = problemas_sistema.count()
+    total_geral = total_professores + total_sistema
     
-    # Conta problemas relatados por prioridade
-    problemas_relatados_alta = problemas_relatados.filter(prioridade__in=['CRITICA', 'ALTA']).count()
-    problemas_relatados_media = problemas_relatados.filter(prioridade='MEDIA').count()
-    problemas_relatados_baixa = problemas_relatados.filter(prioridade='BAIXA').count()
+    # Contar por prioridade
+    def contar_por_prioridade(queryset, prioridades):
+        return queryset.filter(prioridade__in=prioridades).count()
     
     estatisticas = {
         'total_problemas': total_geral,
+        'total_por_origem': {
+            'professores': total_professores,
+            'sistema': total_sistema
+        },
+        'professores': {
+            'alta': contar_por_prioridade(problemas_professores, ['CRITICA', 'ALTA']),
+            'media': contar_por_prioridade(problemas_professores, ['MEDIA']),
+            'baixa': contar_por_prioridade(problemas_professores, ['BAIXA']),
+            'total': total_professores
+        },
+        'sistema': {
+            'alta': contar_por_prioridade(problemas_sistema, ['CRITICA', 'ALTA']),
+            'media': contar_por_prioridade(problemas_sistema, ['MEDIA']),
+            'baixa': contar_por_prioridade(problemas_sistema, ['BAIXA']),
+            'total': total_sistema
+        },
         'total_por_prioridade': {
-            'alta': total_alta,
-            'media': total_media,
-            'baixa': total_baixa
-        },
-        'alunos_duplicados': {
-            'alta': duplicados_alta,
-            'media': duplicados_media,
-            'total': len(alunos_duplicados)
-        },
-        'turmas_sem_professor': len(turmas_sem_professor),
-        'professores_sem_turma': len(professores_sem_turma),
-        'problemas_relatados': {
-            'alta': problemas_relatados_alta,
-            'media': problemas_relatados_media,
-            'baixa': problemas_relatados_baixa,
-            'total': problemas_relatados.count()
+            'alta': contar_por_prioridade(problemas_professores, ['CRITICA', 'ALTA']) + 
+                   contar_por_prioridade(problemas_sistema, ['CRITICA', 'ALTA']),
+            'media': contar_por_prioridade(problemas_professores, ['MEDIA']) + 
+                    contar_por_prioridade(problemas_sistema, ['MEDIA']),
+            'baixa': contar_por_prioridade(problemas_professores, ['BAIXA']) + 
+                    contar_por_prioridade(problemas_sistema, ['BAIXA'])
         },
         'problemas_detalhados': {
             'por_prioridade': problemas_por_prioridade,
-            'alunos_duplicados': alunos_duplicados,
-            'turmas_sem_professor': turmas_sem_professor,
-            'professores_sem_turma': professores_sem_turma,
-            'problemas_relatados': list(problemas_relatados)
+            'todos_professores': list(problemas_professores),
+            'todos_sistema': list(problemas_sistema)
+        },
+        # Backward compatibility para templates existentes
+        'alunos_duplicados': {
+            'alta': problemas_sistema.filter(tipo_problema='ALUNO_DUPLICADO', prioridade__in=['CRITICA', 'ALTA']).count(),
+            'media': problemas_sistema.filter(tipo_problema='ALUNO_DUPLICADO', prioridade='MEDIA').count(),
+            'total': problemas_sistema.filter(tipo_problema='ALUNO_DUPLICADO').count()
+        },
+        'turmas_sem_professor': problemas_sistema.filter(tipo_problema='TURMA_SEM_PROFESSOR').count(),
+        'professores_sem_turma': problemas_sistema.filter(tipo_problema='PROFESSOR_SEM_TURMA').count(),
+        'problemas_relatados': {
+            'alta': problemas_professores.filter(prioridade__in=['CRITICA', 'ALTA']).count(),
+            'media': problemas_professores.filter(prioridade='MEDIA').count(),
+            'baixa': problemas_professores.filter(prioridade='BAIXA').count(),
+            'total': total_professores
         },
         # Dados para análise e relatórios
         'resumo_qualitativo': {
-            'nivel_criticidade': 'alta' if total_alta > 0 else 'media' if total_media > 0 else 'baixa' if total_baixa > 0 else 'ok',
-            'requer_acao_imediata': total_alta > 0,
-            'situacao_geral': 'crítica' if total_alta >= 5 else 'atenção' if total_alta > 0 or total_media >= 3 else 'estável',
-            'tem_problemas_professores': problemas_relatados.count() > 0
+            'nivel_criticidade': 'alta' if (contar_por_prioridade(problemas_professores, ['CRITICA', 'ALTA']) + 
+                                           contar_por_prioridade(problemas_sistema, ['CRITICA', 'ALTA'])) > 0 else 
+                               'media' if (contar_por_prioridade(problemas_professores, ['MEDIA']) + 
+                                         contar_por_prioridade(problemas_sistema, ['MEDIA'])) > 0 else 
+                               'baixa' if (contar_por_prioridade(problemas_professores, ['BAIXA']) + 
+                                         contar_por_prioridade(problemas_sistema, ['BAIXA'])) > 0 else 'ok',
+            'requer_acao_imediata': (contar_por_prioridade(problemas_professores, ['CRITICA', 'ALTA']) + 
+                                   contar_por_prioridade(problemas_sistema, ['CRITICA', 'ALTA'])) > 0,
+            'situacao_geral': 'crítica' if (contar_por_prioridade(problemas_professores, ['CRITICA', 'ALTA']) + 
+                                          contar_por_prioridade(problemas_sistema, ['CRITICA', 'ALTA'])) >= 5 else 
+                            'atenção' if (contar_por_prioridade(problemas_professores, ['CRITICA', 'ALTA']) + 
+                                        contar_por_prioridade(problemas_sistema, ['CRITICA', 'ALTA'])) > 0 or 
+                                       (contar_por_prioridade(problemas_professores, ['MEDIA']) + 
+                                        contar_por_prioridade(problemas_sistema, ['MEDIA'])) >= 3 else 'estável',
+            'tem_problemas_professores': total_professores > 0,
+            'tem_problemas_sistema': total_sistema > 0
         }
     }
     
@@ -924,3 +964,56 @@ def configurar_data_limite_view(request):
     }
     
     return render(request, 'admin_panel/configurar_data_limite.html', context)
+
+
+@admin_only
+def nova_turma_view(request):
+    """View para criar uma nova turma"""
+    tipos_turma = TipoTurma.objects.all().order_by('nome')
+    professores = Professor.objects.select_related('user').all().order_by('user__first_name')
+    
+    if request.method == 'POST':
+        tipo_turma_id = request.POST.get('tipo_turma')
+        identificador_turma = request.POST.get('identificador_turma')
+        professor_id = request.POST.get('professor_responsavel')
+        
+        if tipo_turma_id and identificador_turma:
+            try:
+                tipo_turma = TipoTurma.objects.get(id=tipo_turma_id)
+                professor = Professor.objects.get(id=professor_id) if professor_id else None
+                
+                # Criar a turma
+                turma = Turma.objects.create(
+                    tipo_turma=tipo_turma,
+                    identificador_turma=identificador_turma,
+                    professor_responsavel=professor
+                )
+                
+                messages.success(request, f'Turma "{turma.nome}" criada com sucesso!')
+                return redirect('admin_panel:configurar_turma', turma_id=turma.id)
+                
+            except Exception as e:
+                messages.error(request, f'Erro ao criar turma: {str(e)}')
+        else:
+            messages.error(request, 'Tipo de turma e identificador são obrigatórios.')
+    
+    context = {
+        'title': 'Nova Turma',
+        'tipos_turma': tipos_turma,
+        'professores': professores,
+    }
+    return render(request, 'admin_panel/nova_turma.html', context)
+
+
+@admin_only
+def configurar_turma_view(request, turma_id):
+    """View para configurar uma turma recém-criada"""
+    turma = get_object_or_404(Turma, id=turma_id)
+    
+    context = {
+        'title': f'Configurar {turma.nome}',
+        'turma': turma,
+        'total_alunos': turma.alunos.count(),
+        'competencias': turma.competencias.all() if turma.competencias else [],
+    }
+    return render(request, 'admin_panel/configurar_turma.html', context)

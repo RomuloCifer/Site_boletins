@@ -1,0 +1,549 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="nova-turma-container">
+    <!-- Cabeçalho com título e navegação -->
+    <div class="header-section">
+        <div class="breadcrumb-nav">
+            <a href="{% url 'admin_panel:dashboard' %}" class="breadcrumb-link">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">Nova Turma</span>
+        </div>
+        <h1 class="page-title">
+            <i class="fas fa-plus-circle"></i>
+            Criar Nova Turma
+        </h1>
+        <p class="page-subtitle">Configure as informações básicas da turma. Após a criação, você poderá adicionar alunos e fazer outras configurações.</p>
+    </div>
+
+    <!-- Mensagens -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Formulário Principal -->
+    <div class="main-form-card">
+        <div class="card-header">
+            <h3><i class="fas fa-clipboard-list"></i> Informações da Turma</h3>
+        </div>
+        
+        <form method="post" class="turma-form">
+            {% csrf_token %}
+            
+            <div class="form-grid">
+                <!-- Tipo de Turma -->
+                <div class="form-group full-width">
+                    <label for="tipo_turma" class="form-label">
+                        <i class="fas fa-tags"></i> Tipo de Turma *
+                    </label>
+                    <select id="tipo_turma" name="tipo_turma" class="form-control" required>
+                        <option value="">Selecione o tipo de turma...</option>
+                        {% for tipo in tipos_turma %}
+                            <option value="{{ tipo.id }}" data-competencias="{{ tipo.competencias.count }}">
+                                {{ tipo.nome }}
+                                {% if tipo.descricao %} - {{ tipo.descricao }}{% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">
+                        O tipo define quais competências a turma terá. 
+                        <a href="{% url 'admin_panel:gerenciar_tipos_turma' %}" target="_blank">Gerenciar tipos de turma</a>
+                    </small>
+                </div>
+
+                <!-- Identificador da Turma -->
+                <div class="form-group">
+                    <label for="identificador_turma" class="form-label">
+                        <i class="fas fa-id-badge"></i> Identificador da Turma *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="identificador_turma" 
+                        name="identificador_turma" 
+                        class="form-control" 
+                        placeholder="Ex: TT18, MW20, SEG19"
+                        required
+                        maxlength="100"
+                    >
+                    <small class="form-help">
+                        Código único que identifica horário/dias da turma
+                    </small>
+                </div>
+
+                <!-- Professor Responsável -->
+                <div class="form-group">
+                    <label for="professor_responsavel" class="form-label">
+                        <i class="fas fa-chalkboard-teacher"></i> Professor Responsável
+                    </label>
+                    <select id="professor_responsavel" name="professor_responsavel" class="form-control">
+                        <option value="">Atribuir depois...</option>
+                        {% for professor in professores %}
+                            <option value="{{ professor.id }}">
+                                {{ professor.user.get_full_name|default:professor.user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">
+                        Você pode definir o professor agora ou depois
+                    </small>
+                </div>
+            </div>
+
+            <!-- Preview das Competências -->
+            <div class="competencias-preview" id="competenciasPreview" style="display: none;">
+                <h4><i class="fas fa-list-check"></i> Competências que serão incluídas:</h4>
+                <div id="competenciasList" class="competencias-tags"></div>
+            </div>
+
+            <!-- Botões de ação -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+                <button type="submit" class="btn btn-primary btn-create">
+                    <i class="fas fa-plus"></i> Criar Turma
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cards informativos -->
+    <div class="info-cards">
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="info-content">
+                <h4>Próximos Passos</h4>
+                <p>Após criar a turma, você será direcionado para uma página onde poderá:</p>
+                <ul>
+                    <li>Importar alunos via arquivo CSV</li>
+                    <li>Adicionar alunos manualmente</li>
+                    <li>Configurar detalhes adicionais</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="info-card">
+            <div class="info-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="info-content">
+                <h4>Exemplos de Identificadores</h4>
+                <ul>
+                    <li><code>TT18</code> - Tuesday/Thursday 18h</li>
+                    <li><code>MW20</code> - Monday/Wednesday 20h</li>
+                    <li><code>SEG19</code> - Segunda-feira 19h</li>
+                    <li><code>SABMANHA</code> - Sábado manhã</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Container principal */
+.nova-turma-container {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+    color: #1a202c !important;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Cabeçalho */
+.header-section {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.breadcrumb-nav {
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: #3182ce !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #2c5282 !important;
+}
+
+.breadcrumb-separator {
+    margin: 0 0.5rem;
+    color: #718096;
+}
+
+.breadcrumb-current {
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.page-title {
+    color: #2d3748 !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    margin: 0 0 0.5rem 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.page-subtitle {
+    color: #718096 !important;
+    font-size: 1rem !important;
+    margin: 0 !important;
+    max-width: 600px;
+    margin: 0 auto !important;
+}
+
+/* Card principal do formulário */
+.main-form-card {
+    background: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    margin-bottom: 2rem !important;
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #2d3748, #4a5568) !important;
+    color: white !important;
+    padding: 1.5rem !important;
+    border-bottom: none !important;
+}
+
+.card-header h3 {
+    color: white !important;
+    margin: 0 !important;
+    font-weight: 600 !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Formulário */
+.turma-form {
+    padding: 2rem !important;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    color: #2d3748 !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 0.95rem !important;
+}
+
+.form-control {
+    width: 100% !important;
+    padding: 0.75rem !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    background: white !important;
+    color: #2d3748 !important;
+    font-size: 1rem !important;
+    transition: all 0.2s ease !important;
+}
+
+.form-control:focus {
+    border-color: #3182ce !important;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1) !important;
+    outline: none !important;
+}
+
+.form-help {
+    display: block !important;
+    margin-top: 0.5rem !important;
+    color: #718096 !important;
+    font-size: 0.85rem !important;
+}
+
+.form-help a {
+    color: #3182ce !important;
+    text-decoration: none !important;
+}
+
+.form-help a:hover {
+    text-decoration: underline !important;
+}
+
+/* Preview das competências */
+.competencias-preview {
+    background: #f7fafc !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 1.5rem !important;
+    margin-bottom: 2rem !important;
+}
+
+.competencias-preview h4 {
+    color: #2d3748 !important;
+    margin: 0 0 1rem 0 !important;
+    font-size: 1.1rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.competencias-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.competencia-tag {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 20px !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+}
+
+/* Botões de ação */
+.form-actions {
+    display: flex !important;
+    gap: 1rem !important;
+    justify-content: flex-end !important;
+    padding-top: 1.5rem !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 8px !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.btn-secondary {
+    background: #e2e8f0 !important;
+    color: #4a5568 !important;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0 !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+    color: white !important;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2c5282, #2a4365) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(49, 130, 206, 0.3) !important;
+}
+
+/* Cards informativos */
+.info-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.info-card {
+    background: white !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+    border-left: 4px solid #3182ce !important;
+}
+
+.info-icon {
+    color: #3182ce !important;
+    font-size: 2rem !important;
+    margin-bottom: 1rem !important;
+}
+
+.info-content h4 {
+    color: #2d3748 !important;
+    margin: 0 0 0.75rem 0 !important;
+    font-weight: 600 !important;
+}
+
+.info-content p {
+    color: #4a5568 !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.info-content ul {
+    color: #4a5568 !important;
+    margin: 0 !important;
+    padding-left: 1.5rem !important;
+}
+
+.info-content code {
+    background: #f7fafc !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 4px !important;
+    font-family: 'Courier New', monospace !important;
+    color: #3182ce !important;
+    font-weight: 600 !important;
+}
+
+/* Alertas */
+.alert {
+    padding: 1rem 1.25rem !important;
+    border-radius: 8px !important;
+    margin-bottom: 1.5rem !important;
+    border: none !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #c6f6d5, #9ae6b4) !important;
+    color: #22543d !important;
+    border-left: 4px solid #38a169 !important;
+}
+
+.alert-error {
+    background: linear-gradient(135deg, #fed7d7, #feb2b2) !important;
+    color: #742a2a !important;
+    border-left: 4px solid #e53e3e !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .nova-turma-container {
+        padding: 1rem !important;
+        margin: 0.5rem !important;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .info-cards {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+    
+    .form-actions {
+        flex-direction: column !important;
+    }
+    
+    .page-title {
+        font-size: 1.5rem !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoTurmaSelect = document.getElementById('tipo_turma');
+    const competenciasPreview = document.getElementById('competenciasPreview');
+    const competenciasList = document.getElementById('competenciasList');
+    
+    // Dados das competências por tipo de turma
+    const tiposCompetencias = {
+        {% for tipo in tipos_turma %}
+        {{ tipo.id }}: {
+            nome: '{{ tipo.nome }}',
+            competencias: [
+                {% for competencia in tipo.competencias.all %}
+                {
+                    nome: '{{ competencia.nome }}',
+                    tipo: '{{ competencia.get_tipo_nota_display }}'
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    tipoTurmaSelect.addEventListener('change', function() {
+        const selectedTipoId = this.value;
+        
+        if (selectedTipoId && tiposCompetencias[selectedTipoId]) {
+            const tipo = tiposCompetencias[selectedTipoId];
+            competenciasList.innerHTML = '';
+            
+            if (tipo.competencias.length > 0) {
+                tipo.competencias.forEach(comp => {
+                    const tag = document.createElement('span');
+                    tag.className = 'competencia-tag';
+                    tag.innerHTML = `${comp.nome} <small>(${comp.tipo})</small>`;
+                    competenciasList.appendChild(tag);
+                });
+                competenciasPreview.style.display = 'block';
+            } else {
+                competenciasPreview.style.display = 'none';
+            }
+        } else {
+            competenciasPreview.style.display = 'none';
+        }
+    });
+    
+    // Validação do formulário
+    const form = document.querySelector('.turma-form');
+    form.addEventListener('submit', function(e) {
+        const tipoTurma = document.getElementById('tipo_turma').value;
+        const identificador = document.getElementById('identificador_turma').value.trim();
+        
+        if (!tipoTurma) {
+            e.preventDefault();
+            alert('Por favor, selecione um tipo de turma.');
+            return;
+        }
+        
+        if (!identificador) {
+            e.preventDefault();
+            alert('Por favor, informe o identificador da turma.');
+            return;
+        }
+        
+        // Confirmação antes de criar
+        if (!confirm('Confirma a criação desta turma?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+
+{% endblock %}

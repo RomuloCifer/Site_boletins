@@ -240,3 +240,104 @@ class ProgressCalculator:
             'notas_lancadas': len(notas),
             'notas_possiveis': total_notas_possiveis
         }
+
+
+class ProblemaSystemaManager:
+    """
+    Gerenciador para criação automática de problemas detectados pelo sistema
+    """
+    
+    @staticmethod
+    def criar_problema_automatico(tipo_problema, titulo, descricao, professor=None, turma=None, aluno=None, prioridade='MEDIA'):
+        """
+        Cria um problema detectado automaticamente pelo sistema
+        """
+        from .models import ProblemaRelatado
+        from django.utils import timezone
+        
+        # Verifica se já existe um problema similar pendente
+        problema_existente = ProblemaRelatado.objects.filter(
+            origem='SISTEMA',
+            tipo_problema=tipo_problema,
+            status__in=['PENDENTE', 'EM_ANALISE'],
+            turma=turma,
+            aluno=aluno
+        ).first()
+        
+        if problema_existente:
+            # Atualiza a data do problema existente em vez de criar um novo
+            problema_existente.data_atualizacao = timezone.now()
+            problema_existente.save()
+            return problema_existente
+        
+        # Cria novo problema
+        problema = ProblemaRelatado.objects.create(
+            origem='SISTEMA',
+            professor=professor,
+            turma=turma,
+            aluno=aluno,
+            tipo_problema=tipo_problema,
+            titulo=titulo,
+            descricao=descricao,
+            prioridade=prioridade
+        )
+        
+        logger.info(f"Problema automático criado: {problema}")
+        return problema
+    
+    @staticmethod
+    def detectar_e_criar_problemas_automaticos():
+        """
+        Detecta e cria problemas automaticamente baseado no estado do sistema
+        """
+        from .models import Turma, Aluno, Professor
+        from django.db.models import Count
+        
+        problemas_criados = []
+        
+        # 1. Detectar turmas sem professor
+        turmas_sem_professor = Turma.objects.filter(professor_responsavel__isnull=True)
+        for turma in turmas_sem_professor:
+            problema = ProblemaSystemaManager.criar_problema_automatico(
+                tipo_problema='TURMA_SEM_PROFESSOR',
+                titulo=f'Turma {turma.nome} sem professor responsável',
+                descricao=f'A turma {turma.nome} ({turma.identificador_turma}) não possui um professor responsável atribuído.',
+                turma=turma,
+                prioridade='ALTA'
+            )
+            problemas_criados.append(problema)
+        
+        # 2. Detectar professores sem turma
+        professores_sem_turma = Professor.objects.filter(turmas__isnull=True)
+        for professor in professores_sem_turma:
+            problema = ProblemaSystemaManager.criar_problema_automatico(
+                tipo_problema='PROFESSOR_SEM_TURMA',
+                titulo=f'Professor {professor.user.get_full_name() or professor.user.username} sem turma',
+                descricao=f'O professor {professor.user.get_full_name() or professor.user.username} não possui turmas atribuídas.',
+                professor=professor,
+                prioridade='BAIXA'
+            )
+            problemas_criados.append(problema)
+        
+        # 3. Detectar alunos duplicados na mesma turma
+        alunos_duplicados = Aluno.objects.values('nome_completo', 'turma').annotate(
+            total=Count('id')
+        ).filter(total__gt=1)
+        
+        for duplicado in alunos_duplicados:
+            turma = Turma.objects.get(id=duplicado['turma'])
+            alunos = Aluno.objects.filter(
+                nome_completo=duplicado['nome_completo'],
+                turma=turma
+            )
+            
+            problema = ProblemaSystemaManager.criar_problema_automatico(
+                tipo_problema='ALUNO_DUPLICADO',
+                titulo=f'Aluno duplicado: {duplicado["nome_completo"]} na turma {turma.nome}',
+                descricao=f'O aluno {duplicado["nome_completo"]} aparece {duplicado["total"]} vezes na turma {turma.nome}.',
+                turma=turma,
+                prioridade='ALTA'
+            )
+            problemas_criados.append(problema)
+        
+        return problemas_criados

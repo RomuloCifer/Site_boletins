@@ -391,6 +391,7 @@ def relatar_problema_view(request, turma_id):
             
             # Criar o problema
             problema = ProblemaRelatado.objects.create(
+                origem='PROFESSOR',  # Especifica que foi relatado por um professor
                 professor=professor,
                 turma=turma,
                 aluno_id=aluno_id if aluno_id else None,

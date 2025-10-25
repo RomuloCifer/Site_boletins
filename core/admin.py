@@ -75,14 +75,14 @@ class ConfiguracaoSistemaAdmin(admin.ModelAdmin):
 
 @admin.register(ProblemaRelatado)
 class ProblemaRelatadoAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'professor', 'turma', 'tipo_problema', 'status', 'prioridade', 'data_relato')
-    list_filter = ('status', 'prioridade', 'tipo_problema', 'data_relato')
+    list_display = ('titulo', 'origem', 'professor_display', 'turma', 'tipo_problema', 'status', 'prioridade', 'data_relato')
+    list_filter = ('origem', 'status', 'prioridade', 'tipo_problema', 'data_relato')
     search_fields = ('titulo', 'descricao', 'professor__user__first_name', 'professor__user__last_name', 'turma__nome')
     readonly_fields = ('data_relato', 'data_atualizacao')
     
     fieldsets = (
         ('Informações do Problema', {
-            'fields': ('professor', 'turma', 'aluno', 'tipo_problema', 'titulo', 'descricao')
+            'fields': ('origem', 'professor', 'turma', 'aluno', 'tipo_problema', 'titulo', 'descricao')
         }),
         ('Status e Prioridade', {
             'fields': ('status', 'prioridade')
@@ -95,6 +95,15 @@ class ProblemaRelatadoAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def professor_display(self, obj):
+        if obj.professor:
+            return obj.professor.user.get_full_name() or obj.professor.user.username
+        return "Sistema"
+    professor_display.short_description = "Professor/Sistema"
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('professor__user', 'turma', 'aluno')
     
     def save_model(self, request, obj, form, change):
         # Se estiver marcando como resolvido e não tem data de resolução
