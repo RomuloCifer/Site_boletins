@@ -20,6 +20,6 @@ from admin_panel.admin_custom import admin_site
 
 urlpatterns = [
     path('admin/', admin_site.urls),
-    path('admin-tools/', include('admin_panel.urls')),  # URLs do painel administrativo
+    path('admin-panel/', include('admin_panel.urls')),  # URLs do painel administrativo
     path('portal/', include('teacher_portal.urls')),  # URLs do portal do professor
 ]

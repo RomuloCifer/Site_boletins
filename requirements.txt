@@ -15,6 +15,7 @@ Pillow==11.0.0
 
 # Variáveis de ambiente (boa prática para configurações)
 python-decouple==3.8
+python-dotenv==1.0.1
 
 # Timezone support (útil para projetos Django)
 pytz==2024.2
@@ -43,9 +44,13 @@ whitenoise==6.6.0
 django-crispy-forms==2.3
 
 # Biblioteca para CORS (caso precise de API externa)
-django-cors-headers==5.0.0
+django-cors-headers==4.9.0
 
 # Testes e qualidade de código (descomente se precisar)
 # pytest==8.3.3
+
+# Geração de PDF
+reportlab==4.0.9
+weasyprint==62.3
 # pytest-django==4.9.0
 # flake8==7.1.1

@@ -68,4 +68,20 @@ urlpatterns = [
         views.configurar_data_limite_view,
         name='configurar_data_limite'
     ),
+    # URLs para geração de boletins
+    path(
+        'boletim/aluno/<int:aluno_id>/',
+        views.gerar_boletim_individual,
+        name='gerar_boletim_individual'
+    ),
+    path(
+        'boletim/turma/<int:turma_id>/',
+        views.gerar_boletins_turma,
+        name='gerar_boletins_turma'
+    ),
+    path(
+        'api/verificar-notas-turma/<int:turma_id>/',
+        views.verificar_notas_turma,
+        name='verificar_notas_turma'
+    ),
 ]

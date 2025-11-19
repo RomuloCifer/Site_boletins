@@ -267,7 +267,7 @@ class AuditMiddleware:
         
         # Ações que devem ser auditadas
         self.audit_paths = [
-            '/admin-tools/',
+            '/admin-panel/',
             '/admin/',
             '/teacher-portal/turma/',
         ]

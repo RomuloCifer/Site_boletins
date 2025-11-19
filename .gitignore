@@ -1,12 +1,19 @@
+# ==========================================
+# GITIGNORE - Sistema de Notas/Boletins
+# ==========================================
+
 # --- Ambiente Virtual ---
 # OBRIGATÓRIO. Esta pasta contém todos os pacotes instalados e é
 # específica da sua máquina. Outros devs vão criar a sua.
 venv/
+env/
 
 # --- Cache do Python ---
 # OBRIGATÓRIO. Pastas que o Python cria automaticamente.
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # --- Banco de Dados Local ---
 # CRÍTICO. Nunca envie seu banco de dados de desenvolvimento.
@@ -14,57 +21,79 @@ __pycache__/
 db.sqlite3
 *.sqlite3
 
-# --- Arquivos Temporários / Pessoais ---
-# Para arquivos como o .zip que você tem na pasta.
-*.zip
-*.rar
-
 # --- Configurações Sensíveis ---
+# CRÍTICO. Arquivos com senhas, chaves de API, etc.
 .env
 local_settings.py
+
+# --- Logs ---
 *.log
+logs/
+
+# --- Scripts de Desenvolvimento ---
+# Scripts temporários para testes e desenvolvimento
+criar_dados_*.py
+criar_exemplo_*.py
+criar_teste_*.py
+testar_*.py
+verificar_*.py
+
+# --- Relatórios e Documentação Temporária ---
+# Arquivos gerados automaticamente e de documentação que mudam frequentemente
+BOLETINS_IMPLEMENTADO.md
+RELATORIO_*.md
+GUIA_*.md
+ARQUIVOS_EXEMPLO_*.md
+MELHORIAS_*.md
+
+# --- Arquivos de Exemplo ---
+# Arquivos Excel/CSV criados para testes de importação
+exemplo_*.xlsx
+exemplo_*.csv
+exemplo_*.xls
+
+# --- Templates HTML de Teste ---
+# Templates específicos para testes que não são parte do core
+boletim_template.html
 
 # --- Arquivos Estáticos Coletados ---
+# Arquivos CSS/JS coletados pelo Django para produção
 staticfiles/
-media/
+collected_static/
 
-# --- IDEs ---
+# --- Mídia e Uploads ---
+# Arquivos enviados por usuários (PDFs, imagens, etc.)
+media/
+uploads/
+
+# --- IDEs e Editores ---
 .vscode/
 .idea/
 *.swp
 *.swo
+.sublime-project
+.sublime-workspace
 
 # --- Sistema Operacional ---
 Thumbs.db
 .DS_Store
 Desktop.ini
+.directory
 
-# --- Scripts de Desenvolvimento ---
-criar_dados_analytics.py
-criar_dados_exemplo.py
-criar_teste_pequeno.py
-*.log
+# --- Arquivos Comprimidos ---
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.bz2
 
-# (Opcional, mas boa prática para equipes)
-# Arquivos de Sistema Operacional (ex: macOS)
-.DS_Store
+# --- Backup e Temporários ---
+*.bak
+*.tmp
+*.temp
+*~
 
-# --- Arquivos de IDE (Editor de Código) ---
-# (Opcional, mas recomendado)
-.vscode/
-.idea/
-
-# --- Arquivos de Mídia (Uploads) ---
-# Em breve, quando tivermos uploads (ex: PDFs dos boletins),
-# eles irão para cá e não devem ser versionados.
-media/
-
-# --- Arquivos Estáticos Compilados ---
-# Quando você "publicar" o site, o Django juntará
-# todos os arquivos CSS/JS aqui. Não deve ser versionado.
-staticfiles/
-
-# --- Arquivos de Segredos ---
-# CRÍTICO. Vamos criar este arquivo em breve para guardar
-# sua 'SECRET_KEY' e senhas de banco de dados.
-.env
+# --- Certificados e Chaves ---
+*.pem
+*.key
+*.crt

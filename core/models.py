@@ -229,6 +229,52 @@ class Aluno(models.Model):
         
         return round(total / count, 1) if count > 0 else None
 
+    def tem_notas_completas(self):
+        """Verifica se o aluno tem todas as notas lançadas para as competências de sua turma"""
+        if not self.turma.competencias:
+            return False
+        
+        competencias_turma = self.turma.competencias.all()
+        total_competencias = competencias_turma.count()
+        
+        if total_competencias == 0:
+            return False
+        
+        notas_lancadas = LancamentoDeNota.objects.filter(
+            aluno=self,
+            competencia__in=competencias_turma
+        ).count()
+        
+        return notas_lancadas == total_competencias
+    
+    def get_notas_boletim(self):
+        """Retorna todas as notas do aluno organizadas para o boletim"""
+        if not self.turma.competencias:
+            return []
+        
+        competencias_turma = self.turma.competencias.all()
+        notas_data = []
+        
+        for competencia in competencias_turma:
+            try:
+                nota = LancamentoDeNota.objects.get(
+                    aluno=self,
+                    competencia=competencia
+                )
+                notas_data.append({
+                    'competencia': competencia,
+                    'nota': nota.nota_valor,
+                    'data_lancamento': nota.data_lancamento
+                })
+            except LancamentoDeNota.DoesNotExist:
+                notas_data.append({
+                    'competencia': competencia,
+                    'nota': '-',
+                    'data_lancamento': None
+                })
+        
+        return notas_data
+
    
 
     class Meta:

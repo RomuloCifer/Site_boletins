@@ -237,6 +237,105 @@
             box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
         }
         
+        .btn-warning {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+        }
+        
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border-radius: 5px;
+        }
+        
+        /* Modal para status das notas */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .status-completo {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .status-incompleto {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
         .empty-state {
             text-align: center;
             color: #666;
@@ -282,6 +381,85 @@
             background: #f8f9fa;
         }
     </style>
+    
+    <script>
+        // Função para verificar status das notas da turma
+        function verificarStatusNotas(turmaId) {
+            fetch(`/admin-panel/api/verificar-notas-turma/${turmaId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    mostrarModalStatus(data);
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    alert('Erro ao verificar status das notas.');
+                });
+        }
+        
+        // Função para mostrar modal com status
+        function mostrarModalStatus(data) {
+            const modal = document.getElementById('modalStatus');
+            const tbody = document.getElementById('statusTableBody');
+            const resumo = document.getElementById('resumoStatus');
+            
+            // Limpar conteúdo anterior
+            tbody.innerHTML = '';
+            
+            // Atualizar resumo
+            resumo.innerHTML = `
+                <p><strong>Total de alunos:</strong> ${data.total_alunos}</p>
+                <p><strong>Alunos com notas completas:</strong> <span class="status-completo">${data.alunos_completos}</span></p>
+                <p><strong>Alunos com notas incompletas:</strong> <span class="status-incompleto">${data.alunos_incompletos}</span></p>
+            `;
+            
+            // Preencher tabela
+            data.alunos_status.forEach(aluno => {
+                const row = tbody.insertRow();
+                const statusClass = aluno.tem_completas ? 'status-completo' : 'status-incompleto';
+                const statusTexto = aluno.tem_completas ? 'Completo' : 'Incompleto';
+                
+                row.innerHTML = `
+                    <td>${aluno.nome}</td>
+                    <td class="${statusClass}">${statusTexto}</td>
+                    <td>${aluno.progresso}%</td>
+                    <td>
+                        ${aluno.tem_completas 
+                            ? '<a href="/admin-panel/boletim/aluno/' + aluno.id + '/" class="btn btn-info btn-sm" target="_blank">📄 Gerar Boletim</a>'
+                            : '<span style="color: #999;">-</span>'
+                        }
+                    </td>
+                `;
+            });
+            
+            // Mostrar modal
+            modal.style.display = 'block';
+        }
+        
+        // Função para gerar boletins da turma com confirmação
+        function gerarBoletinsTurma(turmaId) {
+            if (confirm('Deseja gerar os boletins de todos os alunos da turma? Serão incluídos apenas alunos com todas as notas lançadas.')) {
+                // Abrir em nova aba
+                window.open(`/admin-panel/boletim/turma/${turmaId}/`, '_blank');
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fechar modal
+            const modal = document.getElementById('modalStatus');
+            const span = document.getElementsByClassName('close')[0];
+            
+            span.onclick = function() {
+                modal.style.display = 'none';
+            }
+            
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            }
+        });
+    </script>
 </head>
 <body>
 
@@ -425,9 +603,46 @@
             <a href="{% url 'admin_panel:importar_alunos' %}" class="btn btn-primary">
                 👥 Importar Alunos
             </a>
-            <a href="#" class="btn btn-success">
-                📄 Gerar Relatório PDF
+            
+            <button onclick="verificarStatusNotas({{ turma.id }})" class="btn btn-info">
+                📊 Verificar Status das Notas
+            </button>
+            
+            <button onclick="gerarBoletinsTurma({{ turma.id }})" class="btn btn-success">
+                📄 Gerar Boletins da Turma
+            </button>
+            
+            <a href="#" class="btn btn-warning">
+                📈 Gerar Relatório Geral
             </a>
+        </div>
+        
+        <!-- Modal para verificar status das notas -->
+        <div id="modalStatus" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Status das Notas - {{ turma.nome }}</h2>
+                    <span class="close">&times;</span>
+                </div>
+                
+                <div id="resumoStatus" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <!-- Será preenchido via JavaScript -->
+                </div>
+                
+                <table class="notas-table">
+                    <thead>
+                        <tr>
+                            <th>Aluno</th>
+                            <th>Status</th>
+                            <th>Progresso</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statusTableBody">
+                        <!-- Será preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
