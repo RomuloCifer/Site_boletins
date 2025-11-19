@@ -496,10 +496,10 @@
                                     id="nota-{{ item.competencia.pk }}"
                                     class="nota-conceitual">
                                 <option value="">Selecione um conceito</option>
-                                <option value="I" {% if item.nota_valor == 'I' %}selected{% endif %}>I - Iniciante</option>
-                                <option value="D" {% if item.nota_valor == 'D' %}selected{% endif %}>D - Desenvolvendo</option>
-                                <option value="C" {% if item.nota_valor == 'C' %}selected{% endif %}>C - Consegue</option>
-                                <option value="A" {% if item.nota_valor == 'A' %}selected{% endif %}>A - Avançado</option>
+                                <option value="A" {% if item.nota_valor == 'A' %}selected{% endif %}>A - Atinge plenamente (100-90%)</option>
+                                <option value="B" {% if item.nota_valor == 'B' %}selected{% endif %}>B - Atinge satisfatoriamente (89-75%)</option>
+                                <option value="C" {% if item.nota_valor == 'C' %}selected{% endif %}>C - Atinge parcialmente (74-60%)</option>
+                                <option value="D" {% if item.nota_valor == 'D' %}selected{% endif %}>D - Ainda não atingiu / Não há evidências para avaliação (59% ou menos)</option>
                             </select>
                         {% endif %}
                     </div>

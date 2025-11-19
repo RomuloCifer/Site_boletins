@@ -226,9 +226,13 @@ Advanced    → Competências avançadas
 Conversation → Speaking, Listening
 ```
 
-### Notas Flexíveis
+### Notas Flexíveis ⭐ ATUALIZADO!
 - **Numéricas (0-100)**: Para Speaking, Listening, Reading, Writing
-- **Categóricas (A,B,C,D)**: Para Grammar, Vocabulary
+- **Conceituais (A-B-C-D)**: Para Grammar, Vocabulary
+  - **A**: Atinge plenamente (100-90%)
+  - **B**: Atinge satisfatoriamente (89-75%)
+  - **C**: Atinge parcialmente (74-60%)
+  - **D**: Ainda não atingiu / Não há evidências para avaliação (59% ou menos)
 - **Validação Automática**: Previne dados inconsistentes
 
 ### Analytics Disponíveis
