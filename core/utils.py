@@ -518,7 +518,11 @@ class BoletimGenerator:
         # Dados básicos do aluno
         professor_nome = 'N/A'
         if turma.professor_responsavel:
-            professor_nome = turma.professor_responsavel.user.get_full_name() or turma.professor_responsavel.user.username
+            # Prioriza nome_completo, depois full_name do User, depois username
+            if turma.professor_responsavel.nome_completo:
+                professor_nome = turma.professor_responsavel.nome_completo
+            else:
+                professor_nome = turma.professor_responsavel.user.get_full_name() or turma.professor_responsavel.user.username
         
         dados_basicos = {
             'aluno': aluno.nome_completo,

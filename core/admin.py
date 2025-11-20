@@ -8,6 +8,7 @@ class ProfessorInline(admin.StackedInline): # Inline para o modelo Professor
     model = Professor # Modelo vinculado
     can_delete = False # Não permite exclusão
     verbose_name_plural = 'Professores' # Nome plural no admin
+    fields = ('nome_completo', 'data_contratacao')  # Adiciona nome_completo
 
 class ProfessorUserAdmin(BaseUserAdmin): # Extende o UserAdmin padrão
     inlines = (ProfessorInline,) # Adiciona o inline de Professor

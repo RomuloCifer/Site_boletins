@@ -26,13 +26,21 @@ class Professor(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE) # Vincula ao usuário do Django
 
+    nome_completo = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Nome completo do professor para exibir nos boletins"
+    )
     data_contratacao = models.DateField(null=True, blank=True)
 
 
 
     def __str__(self):
 
-        return self.user.get_full_name() or self.user.username  # Exibe o nome completo ou o nome de usuário
+        # Prioriza: nome_completo > user.get_full_name() > username
+        if self.nome_completo:
+            return self.nome_completo
+        return self.user.get_full_name() or self.user.username
     
     class Meta: 
 
