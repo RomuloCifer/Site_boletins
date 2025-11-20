@@ -61,6 +61,23 @@
                     </small>
                 </div>
 
+                <!-- Tipo de Boletim -->
+                <div class="form-group full-width">
+                    <label for="boletim_tipo" class="form-label">
+                        <i class="fas fa-file-alt"></i> Tipo de Boletim *
+                    </label>
+                    <select id="boletim_tipo" name="boletim_tipo" class="form-control" required>
+                        {% for value, label in boletim_tipos %}
+                            <option value="{{ value }}" {% if value == 'junior' %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-help">
+                        Selecione o modelo de boletim que será usado para esta turma. Cada modelo possui competências específicas.
+                    </small>
+                </div>
+
                 <!-- Identificador da Turma -->
                 <div class="form-group">
                     <label for="identificador_turma" class="form-label">

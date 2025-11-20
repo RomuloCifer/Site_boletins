@@ -1,0 +1,211 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    .boletim-container {
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 20px;
+    }
+
+    .boletim-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 12px 12px 0 0;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .boletim-header h1 {
+        margin: 0 0 10px 0;
+        font-size: 28px;
+        font-weight: 600;
+    }
+
+    .boletim-header p {
+        margin: 5px 0;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+    .boletim-info {
+        background: white;
+        padding: 20px;
+        border-left: 4px solid #667eea;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .boletim-info strong {
+        color: #667eea;
+        margin-right: 8px;
+    }
+
+    .boletim-content {
+        background: white;
+        padding: 40px;
+        border-radius: 0 0 12px 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        line-height: 1.8;
+    }
+
+    .boletim-content h1,
+    .boletim-content h2 {
+        color: #2c3e50;
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+
+    .boletim-content h1 {
+        font-size: 24px;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 10px;
+    }
+
+    .boletim-content h2 {
+        font-size: 20px;
+        color: #667eea;
+    }
+
+    .boletim-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .boletim-content table th {
+        background: #667eea;
+        color: white;
+        padding: 12px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .boletim-content table td {
+        padding: 12px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .boletim-content table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .boletim-content strong {
+        color: #2c3e50;
+    }
+
+    .action-buttons {
+        margin-top: 30px;
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .action-buttons .btn {
+        margin: 0 10px;
+        padding: 12px 30px;
+        font-size: 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+    }
+
+    .markdown-preview {
+        white-space: pre-wrap;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid #e0e0e0;
+        margin: 30px 0;
+    }
+
+    .legenda {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        border-left: 4px solid #667eea;
+    }
+
+    .legenda h3 {
+        margin-top: 0;
+        color: #667eea;
+    }
+
+    .legenda ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .legenda li {
+        padding: 8px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .legenda li:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="boletim-container">
+    <div class="boletim-header">
+        <h1><i class="fas fa-file-alt"></i> Visualização do Boletim</h1>
+        <p>Aluno: <strong>{{ aluno.nome_completo }}</strong></p>
+        <p>Turma: <strong>{{ aluno.turma.nome }}</strong> | Tipo de Boletim: <strong>{{ boletim_tipo }}</strong></p>
+    </div>
+
+    <div class="boletim-info">
+        <p><strong><i class="fas fa-info-circle"></i> Informação:</strong> 
+        Este é uma prévia do boletim gerado a partir do template markdown com os dados do aluno.</p>
+    </div>
+
+    <div class="boletim-content markdown-preview">
+{{ boletim_markdown|safe|linebreaks }}
+    </div>
+
+    <div class="action-buttons">
+        <a href="{% url 'admin_panel:gerar_boletim_individual' aluno.id %}" class="btn btn-primary">
+            <i class="fas fa-file-pdf"></i> Gerar PDF
+        </a>
+        <a href="{% url 'admin_panel:detalhes_turma' aluno.turma.id %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar para Turma
+        </a>
+    </div>
+</div>
+{% endblock %}

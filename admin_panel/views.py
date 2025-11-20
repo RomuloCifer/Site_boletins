@@ -4,6 +4,7 @@ from django.contrib.admin.views.decorators import staff_member_required # Garant
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from core.models import Turma, Aluno, Professor, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema
+from core.utils import BoletimGenerator
 from .decorators import group_required, admin_only, coordinador_or_admin, secretaria_or_above
 import io
 import re
@@ -985,6 +986,7 @@ def nova_turma_view(request):
         tipo_turma_id = request.POST.get('tipo_turma')
         identificador_turma = request.POST.get('identificador_turma')
         professor_id = request.POST.get('professor_responsavel')
+        boletim_tipo = request.POST.get('boletim_tipo')
         
         if tipo_turma_id and identificador_turma:
             try:
@@ -995,7 +997,8 @@ def nova_turma_view(request):
                 turma = Turma.objects.create(
                     tipo_turma=tipo_turma,
                     identificador_turma=identificador_turma,
-                    professor_responsavel=professor
+                    professor_responsavel=professor,
+                    boletim_tipo=boletim_tipo if boletim_tipo else 'junior'
                 )
                 
                 messages.success(request, f'Turma "{turma.nome}" criada com sucesso!')
@@ -1006,10 +1009,14 @@ def nova_turma_view(request):
         else:
             messages.error(request, 'Tipo de turma e identificador são obrigatórios.')
     
+    # Buscar as opções de boletim da model Turma
+    boletim_tipos = Turma.BOLETIM_TIPOS
+    
     context = {
         'title': 'Nova Turma',
         'tipos_turma': tipos_turma,
         'professores': professores,
+        'boletim_tipos': boletim_tipos,
     }
     return render(request, 'admin_panel/nova_turma.html', context)
 
@@ -1031,6 +1038,28 @@ def configurar_turma_view(request, turma_id):
 # ===============================
 # VIEWS PARA GERAÇÃO DE BOLETINS
 # ===============================
+
+@coordinador_or_admin
+def visualizar_boletim_markdown(request, aluno_id):
+    """Visualiza o boletim de um aluno em formato Markdown"""
+    aluno = get_object_or_404(Aluno, id=aluno_id)
+    
+    try:
+        # Gerar boletim em markdown usando os novos templates
+        boletim_markdown = BoletimGenerator.gerar_boletim(aluno)
+        
+        context = {
+            'title': f'Boletim - {aluno.nome_completo}',
+            'aluno': aluno,
+            'boletim_markdown': boletim_markdown,
+            'boletim_tipo': aluno.turma.get_boletim_tipo_display(),
+        }
+        return render(request, 'admin_panel/visualizar_boletim.html', context)
+    
+    except Exception as e:
+        messages.error(request, f'Erro ao gerar boletim: {str(e)}')
+        return redirect('admin_panel:detalhes_turma', turma_id=aluno.turma.id)
+
 
 @coordinador_or_admin
 def gerar_boletim_individual(request, aluno_id):

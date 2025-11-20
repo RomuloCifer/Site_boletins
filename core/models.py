@@ -109,6 +109,21 @@ class Turma(models.Model): # Representa uma turma
         blank=True
     )
 
+    BOLETIM_TIPOS = [
+        ("adolescentes_adultos", "Adolescentes - adultos"),
+        ("material_antigo", "Material antigo"),
+        ("lion_stars", "Lion stars"),
+        ("junior", "Junior"),
+    ]
+
+    boletim_tipo = models.CharField(
+        max_length=32,
+        choices=BOLETIM_TIPOS,
+        default="junior",
+        verbose_name="Tipo de Boletim",
+        help_text="Escolha o modelo de boletim para esta turma."
+    )
+
     identificador_turma = models.CharField(
         max_length=100, 
         help_text="Ex: TT18 (Tuesday/Thursday 18h), MW20 (Monday/Wednesday 20h)"

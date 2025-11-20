@@ -38,10 +38,11 @@ class TipoTurmaAdmin(admin.ModelAdmin):
 
 @admin.register(Turma)
 class TurmaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'tipo_turma', 'identificador_turma', 'professor_responsavel', 'get_total_alunos') # Campos exibidos na lista
+    list_display = ('nome', 'tipo_turma', 'identificador_turma', 'boletim_tipo', 'professor_responsavel', 'get_total_alunos') # Campos exibidos na lista
     search_fields = ('tipo_turma__nome', 'identificador_turma') # Campos pesquisáveis
-    list_filter = ('tipo_turma',) # Filtro por tipo de turma
+    list_filter = ('tipo_turma', 'boletim_tipo') # Filtro por tipo de turma e tipo de boletim
     inlines = [AlunoInline] # Adiciona o inline de Aluno
+    fields = ('tipo_turma', 'identificador_turma', 'boletim_tipo', 'professor_responsavel') # Ordem dos campos no formulário
 
     def get_total_alunos(self, obj):
         return obj.alunos.count()

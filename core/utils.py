@@ -341,3 +341,180 @@ class ProblemaSystemaManager:
             problemas_criados.append(problema)
         
         return problemas_criados
+
+
+class BoletimGenerator:
+    """
+    Classe para gerar boletins personalizados usando templates markdown com placeholders
+    """
+    
+    # Mapeamento de tipos de boletim para arquivos de template
+    TEMPLATE_MAP = {
+        'adolescentes_adultos': 'adolescentes_adultos.md',
+        'material_antigo': 'material_antigo.md',
+        'lion_stars': 'lion_stars.md',
+        'junior': 'junior.md',
+    }
+    
+    # Mapeamento de competências para placeholders por tipo de boletim
+    COMPETENCIA_PLACEHOLDERS = {
+        'adolescentes_adultos': [
+            'producao_oral',
+            'producao_escrita',
+            'avaliacoes_progresso',
+        ],
+        'material_antigo': [
+            'producao_oral',
+            'producao_escrita',
+            'compreensao_oral',
+            'compreensao_escrita',
+            'writing_bit_01',
+            'writing_bit_02',
+            'checkpoints',
+        ],
+        'lion_stars': [
+            'comunicacao_oral',
+            'compreensao_oral',
+            'interesse_aprendizagem',
+            'colaboracao',
+            'engajamento',
+        ],
+        'junior': [
+            'comunicacao_oral',
+            'compreensao_oral',
+            'comunicacao_escrita',
+            'compreensao_escrita',
+            'interesse_aprendizagem',
+            'colaboracao',
+            'engajamento',
+        ],
+    }
+    
+    @staticmethod
+    def _get_template_path(boletim_tipo):
+        """
+        Retorna o caminho completo do template de boletim
+        """
+        import os
+        from django.conf import settings
+        
+        template_file = BoletimGenerator.TEMPLATE_MAP.get(boletim_tipo)
+        if not template_file:
+            raise ValueError(f"Tipo de boletim '{boletim_tipo}' não encontrado")
+        
+        # Caminho para a pasta de templates de boletim
+        base_dir = settings.BASE_DIR
+        template_path = os.path.join(base_dir, 'core', 'templates', 'boletins', template_file)
+        
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(f"Template de boletim não encontrado: {template_path}")
+        
+        return template_path
+    
+    @staticmethod
+    def _normalizar_nome_competencia(nome_competencia):
+        """
+        Normaliza o nome da competência para corresponder aos placeholders
+        Remove acentos, caracteres especiais e converte para snake_case
+        """
+        import unicodedata
+        
+        # Remove acentos
+        nfkd = unicodedata.normalize('NFKD', nome_competencia)
+        nome_sem_acento = "".join([c for c in nfkd if not unicodedata.combining(c)])
+        
+        # Converte para minúsculas e substitui espaços por underscore
+        nome_normalizado = nome_sem_acento.lower()
+        nome_normalizado = nome_normalizado.replace(' ', '_')
+        
+        # Remove caracteres especiais, mantendo apenas letras, números e underscore
+        nome_normalizado = ''.join(c for c in nome_normalizado if c.isalnum() or c == '_')
+        
+        # Remove partes entre parênteses (como percentuais)
+        if '(' in nome_normalizado:
+            nome_normalizado = nome_normalizado.split('(')[0].strip('_')
+        
+        return nome_normalizado
+    
+    @staticmethod
+    def gerar_boletim(aluno):
+        """
+        Gera o boletim personalizado para um aluno específico
+        
+        Args:
+            aluno: Instância do model Aluno
+            
+        Returns:
+            str: Conteúdo do boletim em markdown com placeholders preenchidos
+            
+        Raises:
+            ValueError: Se o tipo de boletim da turma não for válido
+            FileNotFoundError: Se o template não for encontrado
+        """
+        turma = aluno.turma
+        boletim_tipo = turma.boletim_tipo
+        
+        # Carrega o template
+        template_path = BoletimGenerator._get_template_path(boletim_tipo)
+        
+        with open(template_path, 'r', encoding='utf-8') as f:
+            template_content = f.read()
+        
+        # Dados básicos do aluno
+        dados_basicos = {
+            'aluno': aluno.nome_completo,
+            'nivel': turma.tipo_turma.nome if turma.tipo_turma else turma.identificador_turma,
+            'professor': turma.professor_responsavel.nome if turma.professor_responsavel else 'N/A',
+        }
+        
+        # Substitui dados básicos
+        boletim_content = template_content
+        for placeholder, valor in dados_basicos.items():
+            boletim_content = boletim_content.replace(f'<<{placeholder}>>', valor)
+        
+        # Busca as notas do aluno
+        notas_dict = aluno.get_notas_boletim()
+        
+        # Substitui as notas/competências
+        placeholders_esperados = BoletimGenerator.COMPETENCIA_PLACEHOLDERS.get(boletim_tipo, [])
+        
+        for placeholder in placeholders_esperados:
+            # Busca a nota correspondente no dicionário de notas
+            nota_encontrada = 'N/A'
+            
+            for competencia_nome, nota_info in notas_dict.items():
+                competencia_normalizada = BoletimGenerator._normalizar_nome_competencia(competencia_nome)
+                
+                if competencia_normalizada == placeholder or placeholder in competencia_normalizada:
+                    nota_encontrada = nota_info.get('conceito', 'N/A')
+                    break
+            
+            boletim_content = boletim_content.replace(f'<<{placeholder}>>', nota_encontrada)
+        
+        logger.info(f"Boletim gerado com sucesso para aluno {aluno.nome_completo} (Turma: {turma.nome})")
+        
+        return boletim_content
+    
+    @staticmethod
+    def gerar_boletim_turma(turma):
+        """
+        Gera boletins para todos os alunos de uma turma
+        
+        Args:
+            turma: Instância do model Turma
+            
+        Returns:
+            dict: Dicionário com {aluno_id: boletim_content}
+        """
+        boletins = {}
+        alunos = turma.alunos.filter(ativo=True)
+        
+        for aluno in alunos:
+            try:
+                boletim_content = BoletimGenerator.gerar_boletim(aluno)
+                boletins[aluno.id] = boletim_content
+            except Exception as e:
+                logger.error(f"Erro ao gerar boletim para aluno {aluno.nome_completo}: {str(e)}")
+                boletins[aluno.id] = None
+        
+        return boletins
