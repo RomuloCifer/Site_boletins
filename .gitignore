@@ -35,8 +35,10 @@ logs/
 criar_dados_*.py
 criar_exemplo_*.py
 criar_teste_*.py
+criar_templates_boletim.py
 testar_*.py
 verificar_*.py
+setup_groups.py
 
 # --- Relatórios e Documentação Temporária ---
 # Arquivos gerados automaticamente e de documentação que mudam frequentemente
@@ -46,6 +48,8 @@ GUIA_*.md
 ARQUIVOS_EXEMPLO_*.md
 MELHORIAS_*.md
 ATUALIZACAO_*.md
+IMPLEMENTACAO_*.md
+README_*.md
 
 # --- Arquivos de Exemplo ---
 # Arquivos Excel/CSV criados para testes de importação
