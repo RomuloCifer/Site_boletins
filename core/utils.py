@@ -350,10 +350,10 @@ class BoletimGenerator:
     
     # Mapeamento de tipos de boletim para arquivos de template
     TEMPLATE_MAP = {
-        'adolescentes_adultos': 'adolescentes_adultos.md',
-        'material_antigo': 'material_antigo.md',
-        'lion_stars': 'lion_stars.md',
-        'junior': 'junior.md',
+        'adolescentes_adultos': 'adolescentes_adultos.docx',
+        'material_antigo': 'material_antigo.docx',
+        'lion_stars': 'lion_stars.docx',
+        'junior': 'junior.docx',
     }
     
     # Mapeamento de competências para placeholders por tipo de boletim
@@ -375,7 +375,7 @@ class BoletimGenerator:
         'lion_stars': [
             'comunicacao_oral',
             'compreensao_oral',
-            'interesse_aprendizagem',
+            'interesse_pela_aprendizagem',
             'colaboracao',
             'engajamento',
         ],
@@ -384,7 +384,7 @@ class BoletimGenerator:
             'compreensao_oral',
             'comunicacao_escrita',
             'compreensao_escrita',
-            'interesse_aprendizagem',
+            'interesse_pela_aprendizagem',
             'colaboracao',
             'engajamento',
         ],
@@ -437,82 +437,210 @@ class BoletimGenerator:
         return nome_normalizado
     
     @staticmethod
+    def _normalizar_texto(texto):
+        """
+        Remove acentos e caracteres especiais de um texto
+        """
+        import unicodedata
+        nfkd = unicodedata.normalize('NFKD', texto)
+        return "".join([c for c in nfkd if not unicodedata.combining(c)])
+    
+    @staticmethod
+    def _substituir_em_paragraph(paragraph, substituicoes):
+        """
+        Substitui placeholders em um parágrafo, lidando com runs fragmentados e acentos
+        """
+        texto_original = paragraph.text
+        texto_normalizado = BoletimGenerator._normalizar_texto(texto_original)
+        substituiu_algo = False
+        
+        # Tenta encontrar placeholders normalizados
+        for placeholder, valor in substituicoes.items():
+            # Busca com e sem acentos
+            placeholder_com_acentos_patterns = [
+                f'<<{placeholder}>>',  # sem acentos (ex: <<nivel>>)
+            ]
+            
+            # Gera variações com possíveis acentos
+            if placeholder == 'nivel':
+                placeholder_com_acentos_patterns.append('<<nível>>')
+            elif placeholder == 'colaboracao':
+                placeholder_com_acentos_patterns.append('<<colaboração>>')
+            
+            for pattern in placeholder_com_acentos_patterns:
+                if pattern in texto_original:
+                    print(f"  → Encontrado '{pattern}' no texto: '{texto_original[:50]}...'")
+                    
+                    # Substitui no texto completo
+                    novo_texto = texto_original.replace(pattern, str(valor))
+                    
+                    # Limpa todos os runs
+                    for run in paragraph.runs:
+                        run.text = ''
+                    
+                    # Adiciona o texto substituído no primeiro run
+                    if paragraph.runs:
+                        paragraph.runs[0].text = novo_texto
+                    else:
+                        paragraph.add_run(novo_texto)
+                    
+                    print(f"  ✓ Substituído para: '{novo_texto[:50]}...'")
+                    texto_original = novo_texto  # Atualiza para próximas substituições
+                    substituiu_algo = True
+                    break
+        
+        return substituiu_algo
+    
+    @staticmethod
     def gerar_boletim(aluno):
         """
-        Gera o boletim personalizado para um aluno específico
+        Gera o boletim personalizado para um aluno específico a partir de template Word (.docx)
         
         Args:
             aluno: Instância do model Aluno
             
         Returns:
-            str: Conteúdo do boletim em markdown com placeholders preenchidos
+            Document: Objeto Document do python-docx com placeholders preenchidos
             
         Raises:
             ValueError: Se o tipo de boletim da turma não for válido
             FileNotFoundError: Se o template não for encontrado
         """
+        from docx import Document
+        
         turma = aluno.turma
         boletim_tipo = turma.boletim_tipo
         
-        # Carrega o template
+        # Carrega o template Word
         template_path = BoletimGenerator._get_template_path(boletim_tipo)
-        
-        with open(template_path, 'r', encoding='utf-8') as f:
-            template_content = f.read()
+        doc = Document(template_path)
         
         # Dados básicos do aluno
+        professor_nome = 'N/A'
+        if turma.professor_responsavel:
+            professor_nome = turma.professor_responsavel.user.get_full_name() or turma.professor_responsavel.user.username
+        
         dados_basicos = {
             'aluno': aluno.nome_completo,
             'nivel': turma.tipo_turma.nome if turma.tipo_turma else turma.identificador_turma,
-            'professor': turma.professor_responsavel.nome if turma.professor_responsavel else 'N/A',
+            'professor': professor_nome,
         }
         
-        # Substitui dados básicos
-        boletim_content = template_content
-        for placeholder, valor in dados_basicos.items():
-            boletim_content = boletim_content.replace(f'<<{placeholder}>>', valor)
+        print(f"\n{'='*80}")
+        print(f"DEBUG - Dados básicos:")
+        print(f"  aluno: {dados_basicos['aluno']}")
+        print(f"  nivel: {dados_basicos['nivel']}")
+        print(f"  professor: {dados_basicos['professor']}")
+        print(f"{'='*80}\n")
         
-        # Busca as notas do aluno
-        notas_dict = aluno.get_notas_boletim()
+        # Busca as notas do aluno (retorna uma lista)
+        notas_list = aluno.get_notas_boletim()
         
-        # Substitui as notas/competências
+        # Preparar todos os placeholders para substituição
         placeholders_esperados = BoletimGenerator.COMPETENCIA_PLACEHOLDERS.get(boletim_tipo, [])
         
+        print(f"Boletim tipo: {boletim_tipo}")
+        print(f"Placeholders esperados: {placeholders_esperados}")
+        print(f"Total de notas: {len(notas_list)}")
+        
+        # Dicionário completo de substituições
+        substituicoes = dados_basicos.copy()
+        
+        # Adicionar notas ao dicionário de substituições
+        print("\nBUSCANDO NOTAS:")
         for placeholder in placeholders_esperados:
-            # Busca a nota correspondente no dicionário de notas
             nota_encontrada = 'N/A'
+            print(f"\n  Procurando por placeholder: '{placeholder}'")
             
-            for competencia_nome, nota_info in notas_dict.items():
-                competencia_normalizada = BoletimGenerator._normalizar_nome_competencia(competencia_nome)
-                
-                if competencia_normalizada == placeholder or placeholder in competencia_normalizada:
-                    nota_encontrada = nota_info.get('conceito', 'N/A')
-                    break
+            # notas_list é uma lista de dicionários com 'competencia', 'nota', 'data_lancamento'
+            for nota_info in notas_list:
+                competencia = nota_info.get('competencia')
+                if competencia:
+                    competencia_normalizada = BoletimGenerator._normalizar_nome_competencia(competencia.nome)
+                    print(f"    Comparando: '{competencia.nome}' -> '{competencia_normalizada}'")
+                    
+                    if competencia_normalizada == placeholder:
+                        nota_valor = nota_info.get('nota', 'N/A')
+                        nota_encontrada = str(nota_valor) if nota_valor != '-' else 'N/A'
+                        print(f"    ✓ MATCH EXATO! Nota: {nota_encontrada}")
+                        break
+                    elif placeholder in competencia_normalizada:
+                        nota_valor = nota_info.get('nota', 'N/A')
+                        nota_encontrada = str(nota_valor) if nota_valor != '-' else 'N/A'
+                        print(f"    ✓ MATCH PARCIAL! Nota: {nota_encontrada}")
+                        break
             
-            boletim_content = boletim_content.replace(f'<<{placeholder}>>', nota_encontrada)
+            if nota_encontrada == 'N/A':
+                print(f"    ✗ Nenhuma correspondência encontrada")
+            
+            substituicoes[placeholder] = nota_encontrada
+        
+        print(f"\nDicionário de substituições completo:")
+        for key, value in substituicoes.items():
+            print(f"  <<{key}>> → {value}")
+        print()
+        
+        # DEBUG: Mostrar todos os textos do documento
+        print("="*80)
+        print("TEXTOS ENCONTRADOS NO DOCUMENTO:")
+        print("="*80)
+        print("\nParágrafos:")
+        for i, paragraph in enumerate(doc.paragraphs):
+            if paragraph.text.strip():
+                print(f"  [{i}] {paragraph.text[:100]}")
+        
+        print("\nTabelas:")
+        for ti, table in enumerate(doc.tables):
+            for ri, row in enumerate(table.rows):
+                for ci, cell in enumerate(row.cells):
+                    for pi, paragraph in enumerate(cell.paragraphs):
+                        if paragraph.text.strip():
+                            print(f"  [T{ti}-R{ri}-C{ci}-P{pi}] {paragraph.text[:100]}")
+        print("="*80)
+        print()
+        
+        # Substituir placeholders no documento Word
+        substituicoes_feitas = []
+        
+        print("INICIANDO SUBSTITUIÇÕES:")
+        # Substituir em parágrafos
+        for paragraph in doc.paragraphs:
+            if BoletimGenerator._substituir_em_paragraph(paragraph, substituicoes):
+                substituicoes_feitas.append(f"Parágrafo substituído")
+        
+        # Substituir em tabelas
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        if BoletimGenerator._substituir_em_paragraph(paragraph, substituicoes):
+                            substituicoes_feitas.append(f"Célula de tabela substituída")
+        
+        print(f"Total de parágrafos/células processados: {len(substituicoes_feitas)}")
+        print()
         
         logger.info(f"Boletim gerado com sucesso para aluno {aluno.nome_completo} (Turma: {turma.nome})")
         
-        return boletim_content
+        return doc
     
     @staticmethod
     def gerar_boletim_turma(turma):
         """
-        Gera boletins para todos os alunos de uma turma
+        Gera boletims para todos os alunos de uma turma
         
         Args:
             turma: Instância do model Turma
             
         Returns:
-            dict: Dicionário com {aluno_id: boletim_content}
+            dict: Dicionário com {aluno_id: Document object}
         """
         boletins = {}
         alunos = turma.alunos.filter(ativo=True)
         
         for aluno in alunos:
             try:
-                boletim_content = BoletimGenerator.gerar_boletim(aluno)
-                boletins[aluno.id] = boletim_content
+                boletim_doc = BoletimGenerator.gerar_boletim(aluno)
+                boletins[aluno.id] = boletim_doc
             except Exception as e:
                 logger.error(f"Erro ao gerar boletim para aluno {aluno.nome_completo}: {str(e)}")
                 boletins[aluno.id] = None

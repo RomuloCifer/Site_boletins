@@ -70,6 +70,11 @@ urlpatterns = [
     ),
     # URLs para geração de boletins
     path(
+        'boletim/download-word/<int:aluno_id>/',
+        views.visualizar_boletim_markdown,
+        name='download_boletim_word'
+    ),
+    path(
         'boletim/aluno/<int:aluno_id>/',
         views.gerar_boletim_individual,
         name='gerar_boletim_individual'

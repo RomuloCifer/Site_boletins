@@ -1001,7 +1001,15 @@ def nova_turma_view(request):
                     boletim_tipo=boletim_tipo if boletim_tipo else 'junior'
                 )
                 
-                messages.success(request, f'Turma "{turma.nome}" criada com sucesso!')
+                # As competências agora são automaticamente definidas pelo boletim_tipo
+                # através da propriedade turma.competencias
+                competencias_count = turma.competencias.count()
+                
+                messages.success(
+                    request, 
+                    f'Turma "{turma.nome}" criada com sucesso! ({competencias_count} competências do tipo {turma.get_boletim_tipo_display()})'
+                )
+                
                 return redirect('admin_panel:configurar_turma', turma_id=turma.id)
                 
             except Exception as e:
@@ -1041,20 +1049,23 @@ def configurar_turma_view(request, turma_id):
 
 @coordinador_or_admin
 def visualizar_boletim_markdown(request, aluno_id):
-    """Visualiza o boletim de um aluno em formato Markdown"""
+    """Permite baixar o boletim de um aluno em formato Word (.docx)"""
     aluno = get_object_or_404(Aluno, id=aluno_id)
     
     try:
-        # Gerar boletim em markdown usando os novos templates
-        boletim_markdown = BoletimGenerator.gerar_boletim(aluno)
+        # Gerar boletim em Word usando os novos templates
+        boletim_doc = BoletimGenerator.gerar_boletim(aluno)
         
-        context = {
-            'title': f'Boletim - {aluno.nome_completo}',
-            'aluno': aluno,
-            'boletim_markdown': boletim_markdown,
-            'boletim_tipo': aluno.turma.get_boletim_tipo_display(),
-        }
-        return render(request, 'admin_panel/visualizar_boletim.html', context)
+        # Criar resposta HTTP com o arquivo Word
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        response['Content-Disposition'] = f'attachment; filename="boletim_{aluno.nome_completo.replace(" ", "_")}.docx"'
+        
+        # Salvar o documento na resposta
+        boletim_doc.save(response)
+        
+        return response
     
     except Exception as e:
         messages.error(request, f'Erro ao gerar boletim: {str(e)}')
@@ -1063,26 +1074,39 @@ def visualizar_boletim_markdown(request, aluno_id):
 
 @coordinador_or_admin
 def gerar_boletim_individual(request, aluno_id):
-    """Gera boletim individual de um aluno em PDF"""
+    """Gera boletim individual de um aluno usando template Word"""
     aluno = get_object_or_404(Aluno, id=aluno_id)
     
     if not aluno.tem_notas_completas():
         messages.warning(request, f'O aluno {aluno.nome_completo} não possui todas as notas lançadas.')
         return redirect('admin_panel:detalhes_turma', turma_id=aluno.turma.id)
     
-    # Criar resposta HTTP com PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="boletim_{aluno.nome_completo.replace(" ", "_")}.pdf"'
-    
-    # Gerar PDF
-    gerar_boletim_pdf(response, aluno)
-    
-    return response
+    try:
+        # Gerar boletim usando template Word da pasta boletins
+        boletim_doc = BoletimGenerator.gerar_boletim(aluno)
+        
+        # Criar buffer temporário para salvar o documento
+        buffer = io.BytesIO()
+        boletim_doc.save(buffer)
+        buffer.seek(0)
+        
+        # Criar resposta HTTP com arquivo Word
+        response = HttpResponse(
+            buffer.read(),
+            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        )
+        response['Content-Disposition'] = f'attachment; filename="boletim_{aluno.nome_completo.replace(" ", "_")}.docx"'
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Erro ao gerar boletim: {str(e)}')
+        return redirect('admin_panel:detalhes_turma', turma_id=aluno.turma.id)
 
 
 @coordinador_or_admin
 def gerar_boletins_turma(request, turma_id):
-    """Gera boletins de todos os alunos de uma turma com notas completas"""
+    """Gera boletins Word de todos os alunos de uma turma com notas completas"""
     turma = get_object_or_404(Turma, id=turma_id)
     
     # Verificar quais alunos têm notas completas
@@ -1099,12 +1123,37 @@ def gerar_boletins_turma(request, turma_id):
         messages.error(request, 'Nenhum aluno da turma possui todas as notas lançadas.')
         return redirect('admin_panel:detalhes_turma', turma_id=turma.id)
     
-    # Criar resposta HTTP com PDF
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="boletins_{turma.identificador_turma.replace(" ", "_")}.pdf"'
+    # Se for apenas 1 aluno, retorna o arquivo Word individual
+    if len(alunos_completos) == 1:
+        return gerar_boletim_individual(request, alunos_completos[0].id)
     
-    # Gerar PDF com todos os boletins
-    gerar_boletins_turma_pdf(response, alunos_completos)
+    # Para múltiplos alunos, criar um ZIP com todos os boletins Word
+    import zipfile
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for aluno in alunos_completos:
+            try:
+                # Gerar boletim Word para cada aluno
+                boletim_doc = BoletimGenerator.gerar_boletim(aluno)
+                
+                # Salvar em buffer temporário
+                doc_buffer = io.BytesIO()
+                boletim_doc.save(doc_buffer)
+                doc_buffer.seek(0)
+                
+                # Adicionar ao ZIP
+                filename = f"boletim_{aluno.nome_completo.replace(' ', '_')}.docx"
+                zip_file.writestr(filename, doc_buffer.read())
+                
+            except Exception as e:
+                logger.error(f"Erro ao gerar boletim para {aluno.nome_completo}: {str(e)}")
+    
+    zip_buffer.seek(0)
+    
+    # Criar resposta HTTP com ZIP
+    response = HttpResponse(zip_buffer.read(), content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename="boletins_{turma.identificador_turma.replace(" ", "_")}.zip"'
     
     # Adicionar mensagem sobre alunos incompletos
     if alunos_incompletos:
@@ -1118,313 +1167,6 @@ def gerar_boletins_turma(request, turma_id):
         messages.success(request, f'Boletins gerados com sucesso para todos os {len(alunos_completos)} alunos da turma.')
     
     return response
-
-
-def gerar_boletim_pdf(response, aluno):
-    """Função auxiliar para gerar PDF de boletim individual usando reportlab"""
-    doc = SimpleDocTemplate(response, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, 
-                          topMargin=2*cm, bottomMargin=2*cm)
-    
-    styles = getSampleStyleSheet()
-    story = []
-    
-    # Estilo customizado para título
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=20,
-        textColor=colors.HexColor('#2c3e50'),
-        spaceAfter=30,
-        alignment=1  # Center
-    )
-    
-    # Estilo para subtítulos
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#34495e'),
-        spaceAfter=15,
-        alignment=1
-    )
-    
-    # Cabeçalho
-    story.append(Paragraph("SISTEMA DE NOTAS", title_style))
-    story.append(Paragraph("Boletim Escolar", subtitle_style))
-    story.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", 
-                          styles['Normal']))
-    story.append(Spacer(1, 0.5*inch))
-    
-    # Informações do aluno
-    info_data = [
-        ['Aluno:', aluno.nome_completo],
-        ['Nível da Turma:', aluno.turma.tipo_turma.nome if aluno.turma.tipo_turma else 'Não definido'],
-        ['Turma:', aluno.turma.identificador_turma],
-        ['Professor(a):', aluno.turma.professor_responsavel.user.get_full_name() 
-         if aluno.turma.professor_responsavel else 'Não atribuído'],
-        ['Matrícula:', aluno.matricula or 'Não informado'],
-    ]
-    
-    info_table = Table(info_data, colWidths=[3*cm, 12*cm])
-    info_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2c3e50')),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    
-    story.append(info_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    # Título da seção de notas
-    story.append(Paragraph("Notas por Competência", 
-                          ParagraphStyle('SectionTitle', parent=styles['Heading2'],
-                                       fontSize=16, textColor=colors.HexColor('#2c3e50'),
-                                       spaceAfter=15, alignment=1,
-                                       backColor=colors.HexColor('#3498db'))))
-    
-    # Tabela de notas
-    notas_data = [['Competência', 'Tipo', 'Nota', 'Data Lançamento']]
-    
-    for item in aluno.get_notas_boletim():
-        data_lancamento = item['data_lancamento'].strftime('%d/%m/%Y') if item['data_lancamento'] else '-'
-        notas_data.append([
-            item['competencia'].nome,
-            item['competencia'].get_tipo_nota_display(),
-            str(item['nota']),
-            data_lancamento
-        ])
-    
-    notas_table = Table(notas_data, colWidths=[6*cm, 3*cm, 2*cm, 3*cm])
-    notas_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34495e')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    
-    story.append(notas_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    # Média geral (se houver)
-    media_geral = aluno.get_media_geral()
-    if media_geral:
-        story.append(Paragraph(f"<b>Média Geral (Competências Numéricas): {media_geral}</b>",
-                              ParagraphStyle('Media', parent=styles['Normal'],
-                                           fontSize=14, textColor=colors.HexColor('#27ae60'),
-                                           alignment=1, spaceAfter=20)))
-    
-    # Espaço para assinaturas
-    story.append(Spacer(1, 1*inch))
-    
-    assinaturas_data = [
-        ['_' * 30, '_' * 30],
-        ['Professor(a) Responsável', 'Coordenação']
-    ]
-    
-    assinaturas_table = Table(assinaturas_data, colWidths=[7*cm, 7*cm])
-    assinaturas_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
-        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 1), (-1, 1), 10),
-    ]))
-    
-    story.append(assinaturas_table)
-    story.append(Spacer(1, 0.5*inch))
-    
-    # Rodapé
-    story.append(Paragraph(
-        "Este boletim foi gerado automaticamente pelo Sistema de Notas.<br/>"
-        "Para dúvidas ou correções, entre em contato com a secretaria.",
-        ParagraphStyle('Footer', parent=styles['Normal'],
-                      fontSize=8, textColor=colors.HexColor('#7f8c8d'),
-                      alignment=1)
-    ))
-    
-    doc.build(story)
-
-
-def gerar_boletins_turma_pdf(response, alunos_completos):
-    """Função auxiliar para gerar PDF com boletins de múltiplos alunos"""
-    doc = SimpleDocTemplate(response, pagesize=A4, leftMargin=2*cm, rightMargin=2*cm, 
-                          topMargin=2*cm, bottomMargin=2*cm)
-    
-    story = []
-    
-    for i, aluno in enumerate(alunos_completos):
-        # Gerar o boletim para este aluno
-        temp_buffer = io.BytesIO()
-        gerar_boletim_pdf(temp_buffer, aluno)
-        
-        # Se não é o último aluno, adicionar quebra de página
-        if i < len(alunos_completos) - 1:
-            # Para múltiplos boletins, vamos gerar cada um separadamente e concatená-los
-            # Por simplicidade, vamos usar uma implementação mais direta
-            pass
-    
-    # Implementação simplificada: gerar boletins individuais em sequência
-    styles = getSampleStyleSheet()
-    
-    for i, aluno in enumerate(alunos_completos):
-        if i > 0:
-            story.append(PageBreak())
-        
-        # Adicionar conteúdo do boletim (similar à função individual)
-        _adicionar_boletim_individual_story(story, aluno, styles)
-    
-    doc.build(story)
-
-
-def _adicionar_boletim_individual_story(story, aluno, styles):
-    """Função auxiliar para adicionar conteúdo de um boletim à história do PDF"""
-    
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=20,
-        textColor=colors.HexColor('#2c3e50'),
-        spaceAfter=30,
-        alignment=1
-    )
-    
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#34495e'),
-        spaceAfter=15,
-        alignment=1
-    )
-    
-    # Cabeçalho
-    story.append(Paragraph("SISTEMA DE NOTAS", title_style))
-    story.append(Paragraph("Boletim Escolar", subtitle_style))
-    story.append(Paragraph(f"Gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}", 
-                          styles['Normal']))
-    story.append(Spacer(1, 0.5*inch))
-    
-    # Informações do aluno
-    info_data = [
-        ['Aluno:', aluno.nome_completo],
-        ['Nível da Turma:', aluno.turma.tipo_turma.nome if aluno.turma.tipo_turma else 'Não definido'],
-        ['Turma:', aluno.turma.identificador_turma],
-        ['Professor(a):', aluno.turma.professor_responsavel.user.get_full_name() 
-         if aluno.turma.professor_responsavel else 'Não atribuído'],
-        ['Matrícula:', aluno.matricula or 'Não informado'],
-    ]
-    
-    info_table = Table(info_data, colWidths=[3*cm, 12*cm])
-    info_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#ecf0f1')),
-        ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#2c3e50')),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
-        ('LEFTPADDING', (0, 0), (-1, -1), 10),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 0), (-1, -1), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-    ]))
-    
-    story.append(info_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    # Título da seção de notas
-    story.append(Paragraph("Notas por Competência", 
-                          ParagraphStyle('SectionTitle', parent=styles['Heading2'],
-                                       fontSize=16, textColor=colors.HexColor('#2c3e50'),
-                                       spaceAfter=15, alignment=1)))
-    
-    # Tabela de notas
-    notas_data = [['Competência', 'Tipo', 'Nota', 'Data Lançamento']]
-    
-    for item in aluno.get_notas_boletim():
-        data_lancamento = item['data_lancamento'].strftime('%d/%m/%Y') if item['data_lancamento'] else '-'
-        notas_data.append([
-            item['competencia'].nome,
-            item['competencia'].get_tipo_nota_display(),
-            str(item['nota']),
-            data_lancamento
-        ])
-    
-    notas_table = Table(notas_data, colWidths=[6*cm, 3*cm, 2*cm, 3*cm])
-    notas_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#34495e')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#bdc3c7')),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-    ]))
-    
-    story.append(notas_table)
-    story.append(Spacer(1, 0.3*inch))
-    
-    # Média geral (se houver)
-    media_geral = aluno.get_media_geral()
-    if media_geral:
-        story.append(Paragraph(f"<b>Média Geral (Competências Numéricas): {media_geral}</b>",
-                              ParagraphStyle('Media', parent=styles['Normal'],
-                                           fontSize=14, textColor=colors.HexColor('#27ae60'),
-                                           alignment=1, spaceAfter=20)))
-    
-    # Espaço para assinaturas
-    story.append(Spacer(1, 1*inch))
-    
-    assinaturas_data = [
-        ['_' * 30, '_' * 30],
-        ['Professor(a) Responsável', 'Coordenação']
-    ]
-    
-    assinaturas_table = Table(assinaturas_data, colWidths=[7*cm, 7*cm])
-    assinaturas_table.setStyle(TableStyle([
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'BOTTOM'),
-        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 10),
-        ('TOPPADDING', (0, 1), (-1, 1), 10),
-    ]))
-    
-    story.append(assinaturas_table)
-    story.append(Spacer(1, 0.5*inch))
-    
-    # Rodapé
-    story.append(Paragraph(
-        "Este boletim foi gerado automaticamente pelo Sistema de Notas.<br/>"
-        "Para dúvidas ou correções, entre em contato com a secretaria.",
-        ParagraphStyle('Footer', parent=styles['Normal'],
-                      fontSize=8, textColor=colors.HexColor('#7f8c8d'),
-                      alignment=1)
-    ))
 
 
 @coordinador_or_admin

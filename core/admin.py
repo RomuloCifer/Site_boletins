@@ -28,13 +28,13 @@ class AlunoInline(admin.TabularInline): # Inline para o modelo Aluno
 
 @admin.register(TipoTurma)
 class TipoTurmaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'descricao', 'get_total_competencias')
+    list_display = ('nome', 'descricao')
     search_fields = ('nome', 'descricao')
-    filter_horizontal = ('competencias',)
+    fields = ('nome', 'descricao')  # Remove o campo de competências do formulário
     
-    def get_total_competencias(self, obj):
-        return obj.competencias.count()
-    get_total_competencias.short_description = 'Total de Competências'
+    class Meta:
+        verbose_name = 'Tipo de Turma'
+        verbose_name_plural = 'Tipos de Turma'
 
 @admin.register(Turma)
 class TurmaAdmin(admin.ModelAdmin):

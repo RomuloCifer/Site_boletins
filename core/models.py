@@ -87,7 +87,8 @@ class TipoTurma(models.Model):
         Competencia,
         related_name="tipos_turma",
         verbose_name="Competências do Tipo de Turma",
-        help_text="Competências que serão automaticamente associadas às turmas deste tipo"
+        blank=True,  # Torna opcional - competências virão do boletim_tipo
+        help_text="(Opcional) Competências customizadas. Se vazio, usará as competências do tipo de boletim."
     )
     
     def __str__(self):
@@ -115,6 +116,40 @@ class Turma(models.Model): # Representa uma turma
         ("lion_stars", "Lion stars"),
         ("junior", "Junior"),
     ]
+    
+    # Mapeamento de tipos de boletim para competências necessárias
+    COMPETENCIAS_POR_BOLETIM = {
+        'adolescentes_adultos': [
+            'Produção Oral',
+            'Produção Escrita',
+            'Avaliações de Progresso',
+        ],
+        'material_antigo': [
+            'Produção Oral',
+            'Produção Escrita',
+            'Compreensão Oral',
+            'Compreensão Escrita',
+            'Writing Bit 01',
+            'Writing Bit 02',
+            'Checkpoints',
+        ],
+        'lion_stars': [
+            'Comunicação Oral',
+            'Compreensão Oral',
+            'Interesse pela Aprendizagem',
+            'Colaboração',
+            'Engajamento',
+        ],
+        'junior': [
+            'Comunicação Oral',
+            'Compreensão Oral',
+            'Comunicação Escrita',
+            'Compreensão de Leitura',
+            'Interesse pela Aprendizagem',
+            'Colaboração',
+            'Engajamento',
+        ],
+    }
 
     boletim_tipo = models.CharField(
         max_length=32,
@@ -152,10 +187,19 @@ class Turma(models.Model): # Representa uma turma
     
     @property
     def competencias(self):
-        """Retorna as competências do tipo de turma"""
-        if self.tipo_turma:
-            return self.tipo_turma.competencias
-        return None
+        """Retorna as competências baseadas no tipo de boletim da turma"""
+        # Busca os nomes das competências necessárias para este tipo de boletim
+        nomes_competencias = self.COMPETENCIAS_POR_BOLETIM.get(self.boletim_tipo, [])
+        
+        # Busca os objetos Competencia do banco de dados
+        from django.db.models import Q
+        if nomes_competencias:
+            query = Q()
+            for nome in nomes_competencias:
+                query |= Q(nome=nome)
+            return Competencia.objects.filter(query)
+        
+        return Competencia.objects.none()
 
     def __str__(self):
 
