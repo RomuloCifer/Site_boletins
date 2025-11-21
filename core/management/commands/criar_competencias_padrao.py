@@ -13,15 +13,15 @@ class Command(BaseCommand):
         competencias_padrao = [
             # Competências para adolescentes_adultos
             {'nome': 'Produção Oral', 'tipo_nota': 'ABC'},
-            {'nome': 'Produção Escrita', 'tipo_nota': 'NUM'},
-            {'nome': 'Avaliações de Progresso', 'tipo_nota': 'NUM'},
+            {'nome': 'Produção Escrita', 'tipo_nota': 'ABC'},
+            {'nome': 'Avaliações de Progresso', 'tipo_nota': 'ABC'},
             
             # Competências para material_antigo
-            {'nome': 'Compreensão Oral', 'tipo_nota': 'NUM'},
-            {'nome': 'Compreensão Escrita', 'tipo_nota': 'NUM'},
-            {'nome': 'Writing Bit 01', 'tipo_nota': 'NUM'},
-            {'nome': 'Writing Bit 02', 'tipo_nota': 'NUM'},
-            {'nome': 'Checkpoints', 'tipo_nota': 'NUM'},
+            {'nome': 'Compreensão Oral', 'tipo_nota': 'ABC'},
+            {'nome': 'Compreensão Escrita', 'tipo_nota': 'ABC'},
+            {'nome': 'Writing Bit 01', 'tipo_nota': 'ABC'},
+            {'nome': 'Writing Bit 02', 'tipo_nota': 'ABC'},
+            {'nome': 'Checkpoints', 'tipo_nota': 'ABC'},
             
             # Competências para lion_stars
             {'nome': 'Comunicação Oral', 'tipo_nota': 'ABC'},
@@ -31,7 +31,7 @@ class Command(BaseCommand):
             
             # Competências para junior
             {'nome': 'Comunicação Escrita', 'tipo_nota': 'ABC'},
-            {'nome': 'Compreensão de Leitura', 'tipo_nota': 'ABC'},
+            {'nome': 'Compreensão Escrita', 'tipo_nota': 'ABC'},
         ]
         
         criadas = 0

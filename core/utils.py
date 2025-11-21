@@ -361,7 +361,8 @@ class BoletimGenerator:
         'adolescentes_adultos': [
             'producao_oral',
             'producao_escrita',
-            'avaliacoes_progresso',
+            'avaliacoes_de_progresso',
+            'nota_final',
         ],
         'material_antigo': [
             'producao_oral',
@@ -371,6 +372,7 @@ class BoletimGenerator:
             'writing_bit_01',
             'writing_bit_02',
             'checkpoints',
+            'nota_final',
         ],
         'lion_stars': [
             'comunicacao_oral',
@@ -410,6 +412,13 @@ class BoletimGenerator:
             raise FileNotFoundError(f"Template de boletim não encontrado: {template_path}")
         
         return template_path
+    
+    # Mapeamento de aliases de competências
+    # Usado quando uma competência tem nomes diferentes mas representa a mesma coisa
+    COMPETENCIA_ALIASES = {
+        'compreensao_de_leitura': ['compreensao_escrita'],
+        'compreensao_escrita': ['compreensao_de_leitura'],
+    }
     
     @staticmethod
     def _normalizar_nome_competencia(nome_competencia):
@@ -556,6 +565,12 @@ class BoletimGenerator:
             nota_encontrada = 'N/A'
             print(f"\n  Procurando por placeholder: '{placeholder}'")
             
+            # Lista de nomes a buscar (placeholder + seus aliases)
+            nomes_busca = [placeholder]
+            if placeholder in BoletimGenerator.COMPETENCIA_ALIASES:
+                nomes_busca.extend(BoletimGenerator.COMPETENCIA_ALIASES[placeholder])
+                print(f"    (Aliases: {BoletimGenerator.COMPETENCIA_ALIASES[placeholder]})")
+            
             # notas_list é uma lista de dicionários com 'competencia', 'nota', 'data_lancamento'
             for nota_info in notas_list:
                 competencia = nota_info.get('competencia')
@@ -563,12 +578,14 @@ class BoletimGenerator:
                     competencia_normalizada = BoletimGenerator._normalizar_nome_competencia(competencia.nome)
                     print(f"    Comparando: '{competencia.nome}' -> '{competencia_normalizada}'")
                     
-                    if competencia_normalizada == placeholder:
+                    # Verifica match exato com o placeholder ou qualquer um dos aliases
+                    if competencia_normalizada in nomes_busca:
                         nota_valor = nota_info.get('nota', 'N/A')
                         nota_encontrada = str(nota_valor) if nota_valor != '-' else 'N/A'
                         print(f"    ✓ MATCH EXATO! Nota: {nota_encontrada}")
                         break
-                    elif placeholder in competencia_normalizada:
+                    # Verifica match parcial apenas se não houver match exato
+                    elif any(nome in competencia_normalizada for nome in nomes_busca):
                         nota_valor = nota_info.get('nota', 'N/A')
                         nota_encontrada = str(nota_valor) if nota_valor != '-' else 'N/A'
                         print(f"    ✓ MATCH PARCIAL! Nota: {nota_encontrada}")
@@ -578,6 +595,52 @@ class BoletimGenerator:
                 print(f"    ✗ Nenhuma correspondência encontrada")
             
             substituicoes[placeholder] = nota_encontrada
+        
+        # Calcular nota_final se for material_antigo ou adolescentes_adultos
+        if boletim_tipo in ['material_antigo', 'adolescentes_adultos']:
+            # Mapeamento de conceitos para valores numéricos para calcular média
+            conceito_para_numero = {
+                'A': 95,  # 100-90%
+                'B': 82,  # 89-75%
+                'C': 67,  # 74-60%
+                'D': 50,  # 59% ou menos
+            }
+            
+            valores_para_media = []
+            
+            for nota_info in notas_list:
+                nota_valor = nota_info.get('nota')
+                if nota_valor and nota_valor != '-':
+                    # Converte conceito para número
+                    if str(nota_valor).upper() in conceito_para_numero:
+                        valores_para_media.append(conceito_para_numero[str(nota_valor).upper()])
+                    else:
+                        # Se for numérico, usa direto
+                        try:
+                            nota_num = float(nota_valor)
+                            valores_para_media.append(nota_num)
+                        except (ValueError, TypeError):
+                            pass
+            
+            # Calcula a média e converte de volta para conceito
+            if valores_para_media:
+                media = sum(valores_para_media) / len(valores_para_media)
+                
+                # Converte média numérica de volta para conceito
+                if media >= 90:
+                    nota_final_conceito = 'A'
+                elif media >= 75:
+                    nota_final_conceito = 'B'
+                elif media >= 60:
+                    nota_final_conceito = 'C'
+                else:
+                    nota_final_conceito = 'D'
+                
+                substituicoes['nota_final'] = nota_final_conceito
+                print(f"\n  📊 Nota Final calculada: {nota_final_conceito} (média {media:.1f} de {len(valores_para_media)} notas)")
+            else:
+                substituicoes['nota_final'] = 'N/A'
+                print(f"\n  ⚠️ Nota Final: N/A (sem notas válidas)")
         
         print(f"\nDicionário de substituições completo:")
         for key, value in substituicoes.items():
