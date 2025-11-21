@@ -1,39 +1,59 @@
 # 🎓 Sistema de Notas para Escolas de Inglês
 
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.2.7-green?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Ready-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Deploy](https://img.shields.io/badge/Deploy-Railway-purple?style=for-the-badge)](https://railway.app/)
 
-## 📋 Resumo Executivo
+## 🚀 Deploy Rápido
 
-**Sistema de Boletins** é uma solução completa e moderna para gestão educacional em escolas de idiomas, desenvolvida em Django. O sistema oferece controle total sobre turmas, alunos, competências e notas, com funcionalidades avançadas de auditoria, analytics e administração.
+**Primeira vez fazendo deploy?** Comece aqui:
 
-### 🎯 **Objetivo**
-Digitalizar e modernizar o processo de gestão de notas em escolas de inglês, proporcionando uma interface intuitiva para professores e um painel administrativo completo para coordenadores.
+### ⚡ 3 Passos para Colocar Online
 
-### 👥 **Usuários-Alvo**
-- **Professores**: Lançamento rápido de notas e acompanhamento de progresso
-- **Coordenadores**: Visão geral de performance e analytics detalhados  
-- **Administradores**: Gestão completa do sistema e auditoria de ações
+1. **Validar Projeto** (30 segundos)
+   ```powershell
+   python verificar_pre_deploy.py
+   ```
 
-### ⚡ **Principais Diferenciais**
-- **🔍 Sistema de Auditoria Completo**: Rastreamento automático de todas as ações
-- **📊 Analytics Inteligentes**: 4 gráficos interativos com dados em tempo real
-- **🛡️ Segurança Avançada**: Cache otimizado e headers de proteção
-- **📱 Interface Responsiva**: Funciona perfeitamente em desktop e mobile
-- **📁 Importação Inteligente**: Upload em lote com detecção automática de problemas
+2. **Gerar SECRET_KEY** (10 segundos)
+   ```powershell
+   python gerar_secret_key.py
+   ```
 
-### 🚀 **Tecnologia**
-Construído com **Django 5.2.7**, banco **SQLite** (facilmente migrável para PostgreSQL), frontend com **Chart.js** e **CSS3** moderno, sistema de **cache local** e **auditoria automática**.
+3. **Seguir Guia Completo** (30 minutos)
+   👉 Abra: **[COMECAR_AGORA.md](COMECAR_AGORA.md)**
 
-### 📈 **Status do Projeto**
-✅ **Em Produção** - Sistema estável com auditoria completa, interface unificada e performance otimizada.
+**Resultado:** Sistema online com PostgreSQL, HTTPS e dados seguros! 🎉
 
 ---
 
-Um sistema completo e moderno para gerenciamento de notas, turmas e competências em escolas de idiomas, desenvolvido com Django. Inclui painéis administrativos avançados, analytics inteligentes, **sistema de auditoria completo** e interface intuitiva para professores.
+## 📋 Sobre o Sistema
 
-![Dashboard Preview](docs/dashboard-preview.png)
+**Sistema de Boletins** é uma solução completa para gestão educacional em escolas de idiomas. Controle total sobre turmas, alunos, notas e boletins, com geração de PDFs e analytics em tempo real.
+
+### 🎯 Dois Portais de Acesso
+
+1. **Portal Admin** (`/admin-panel/`)
+   - Gestão completa de professores, alunos e turmas
+   - Analytics e relatórios
+   - Geração de boletins em PDF
+   - Sistema de auditoria
+
+2. **Portal do Professor** (`/portal/`)
+   - Lançamento de notas
+   - Acompanhamento de turmas
+   - Dashboard personalizado
+   - Interface intuitiva
+
+### ✨ Destaques
+
+- ✅ **Pronto para Produção** - PostgreSQL, HTTPS, segurança completa
+- ✅ **Deploy Automatizado** - Railway.app com guias detalhados
+- ✅ **Dados Seguros** - Backup automático, zero perda de dados
+- ✅ **Interface Responsiva** - Funciona em desktop e mobile
+- ✅ **Sistema de Auditoria** - Rastreamento completo de ações
+- ✅ **Analytics em Tempo Real** - Gráficos interativos com Chart.js
 
 ## ✨ Características Principais
 
