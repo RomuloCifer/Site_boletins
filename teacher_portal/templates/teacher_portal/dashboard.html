@@ -806,8 +806,9 @@
             color: #ff6b9d;
             pointer-events: none;
             z-index: 9999;
-            animation: fall 2s ease-in forwards;
+            animation: fall 2s linear forwards;
             opacity: 0;
+            will-change: transform, opacity;
         }
 
         @keyframes fall {
@@ -815,7 +816,7 @@
                 opacity: 1;
                 transform: translateY(0) rotate(0deg);
             }
-            50% {
+            90% {
                 opacity: 0.8;
             }
             100% {
@@ -1084,7 +1085,9 @@
 
             // Create hearts falling from top
             const heartEmojis = ['💕', '💖', '💗', '💓', '💝', '💘', '❤️', '🩷', '💞'];
-            const numHearts = 20;
+            const numHearts = 110; // 110 corações ao longo de 11 segundos (10 por segundo)
+            const musicDuration = 11000; // 11 segundos - mesma duração da música
+            const heartInterval = musicDuration / numHearts; // Distribuir uniformemente (~100ms)
 
             for (let i = 0; i < numHearts; i++) {
                 setTimeout(() => {
@@ -1097,17 +1100,13 @@
                     heart.style.left = randomX + 'px';
                     heart.style.top = '-50px';
                     
-                    // Random animation delay and duration
-                    heart.style.animationDelay = (Math.random() * 0.5) + 's';
-                    heart.style.animationDuration = (1.5 + Math.random()) + 's';
-                    
                     document.body.appendChild(heart);
                     
-                    // Remove after animation
+                    // Remove after animation completa (2 segundos de queda + delay)
                     setTimeout(() => {
                         heart.remove();
                     }, 3000);
-                }, i * 100);
+                }, i * heartInterval);
             }
 
             // Create explosion effect at button
