@@ -1,6 +1,12 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
 
+{% block extrahead %}
+{{ block.super }}
+<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
+{% endblock %}
+
 {% block extrastyle %}
     {{ block.super }}
     <link rel="stylesheet" type="text/css" href="{% static 'admin_panel/css/importar_page.css' %}">
@@ -83,4 +89,8 @@
         </div>
 
     </div> </div>
+
+<!-- Footer com Disclaimer -->
+{% include 'includes/footer.html' %}
+
 {% endblock %}

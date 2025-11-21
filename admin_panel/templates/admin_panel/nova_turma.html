@@ -3,6 +3,12 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
+{% endblock %}
+
 {% block content %}
 <div class="nova-turma-container">
     <!-- Cabeçalho com título e navegação -->
@@ -572,5 +578,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Footer com Disclaimer -->
+{% include 'includes/footer.html' %}
 
 {% endblock %}

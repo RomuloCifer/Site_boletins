@@ -3,6 +3,12 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
+{% endblock %}
+
 {% block extrastyle %}
 <style>
     .boletim-container {
@@ -208,4 +214,8 @@
         </a>
     </div>
 </div>
+
+<!-- Footer com Disclaimer -->
+{% include 'includes/footer.html' %}
+
 {% endblock %}

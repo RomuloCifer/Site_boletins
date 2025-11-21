@@ -3,6 +3,12 @@
 
 {% block title %}{{ title }}{% endblock %}
 
+{% block extrahead %}
+{{ block.super }}
+<link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
+{% endblock %}
+
 {% block content %}
 <div class="dashboard-admin">
     
@@ -396,5 +402,8 @@ a:hover {
     }
 }
 </style>
+
+<!-- Footer com Disclaimer -->
+{% include 'includes/footer.html' %}
 
 {% endblock %}
