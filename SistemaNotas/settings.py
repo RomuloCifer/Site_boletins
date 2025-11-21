@@ -32,6 +32,10 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# CSRF Protection - CRÍTICO PARA PRODUÇÃO
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
+CSRF_COOKIE_SECURE = os.getenv('USE_HTTPS', 'False').lower() == 'true'
+
 
 # Application definition
 
@@ -49,6 +53,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # SERVE ARQUIVOS ESTÁTICOS EM PRODUÇÃO
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,12 +85,34 @@ WSGI_APPLICATION = 'SistemaNotas.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Configuração de banco de dados com suporte a PostgreSQL (RECOMENDADO PARA PRODUÇÃO)
+# SQLite não é adequado para múltiplos usuários simultâneos e pode perder dados
+DB_ENGINE = os.getenv('DB_ENGINE', 'django.db.backends.sqlite3')
+
+if DB_ENGINE == 'django.db.backends.postgresql':
+    # Configuração PostgreSQL - GARANTE QUE DADOS NÃO SE PERCAM
+    DATABASES = {
+        'default': {
+            'ENGINE': DB_ENGINE,
+            'NAME': os.getenv('DB_NAME', 'sistema_notas_db'),
+            'USER': os.getenv('DB_USER', ''),
+            'PASSWORD': os.getenv('DB_PASSWORD', ''),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
+            'CONN_MAX_AGE': 600,  # Mantém conexões por 10 minutos
+        }
     }
-}
+else:
+    # Configuração SQLite - APENAS PARA DESENVOLVIMENTO
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / os.getenv('DB_NAME', 'db.sqlite3'),
+        }
+    }
 
 
 # Password validation
@@ -126,6 +153,20 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# WhiteNoise - Compressão e cache de arquivos estáticos
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Media files (uploads de usuários)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -162,7 +203,16 @@ SESSION_COOKIE_AGE = 3600  # 1 hora
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_SECURE = os.getenv('USE_HTTPS', 'False').lower() == 'true'
 
-# Security Settings (básicas)
+# Security Settings - PROTEÇÃO EM PRODUÇÃO
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# Quando USE_HTTPS=True no .env, ativa proteções SSL
+if os.getenv('USE_HTTPS', 'False').lower() == 'true':
+    SECURE_SSL_REDIRECT = True  # Redireciona HTTP para HTTPS
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

@@ -20,11 +20,21 @@ __pycache__/
 # Ele muda a cada teste e pode conter dados sensíveis.
 db.sqlite3
 *.sqlite3
+*.db
+
+# Backups de banco de dados
+db.sqlite3.backup_*
+backup_data.json
 
 # --- Configurações Sensíveis ---
 # CRÍTICO. Arquivos com senhas, chaves de API, etc.
 .env
+.env.local
+.env.production
 local_settings.py
+
+# Manter apenas o exemplo:
+!.env.example
 
 # --- Logs ---
 *.log

@@ -23,11 +23,11 @@ pytz==2024.2
 # Validação de dados e serialização
 djangorestframework==3.15.2
 
-# Banco de dados PostgreSQL (caso queira migrar do SQLite)
-# psycopg2-binary==2.9.9
-
 # Servidor de produção WSGI (para deploy)
-# gunicorn==23.0.0
+gunicorn==23.0.0
+
+# Banco de dados PostgreSQL (RECOMENDADO PARA PRODUÇÃO)
+psycopg2-binary==2.9.10
 
 # Ferramentas de desenvolvimento (descomente se precisar)
 # django-debug-toolbar==4.4.6
