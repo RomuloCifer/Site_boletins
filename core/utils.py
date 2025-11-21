@@ -606,41 +606,106 @@ class BoletimGenerator:
                 'D': 50,  # 59% ou menos
             }
             
-            valores_para_media = []
-            
-            for nota_info in notas_list:
-                nota_valor = nota_info.get('nota')
-                if nota_valor and nota_valor != '-':
-                    # Converte conceito para número
-                    if str(nota_valor).upper() in conceito_para_numero:
-                        valores_para_media.append(conceito_para_numero[str(nota_valor).upper()])
-                    else:
-                        # Se for numérico, usa direto
-                        try:
-                            nota_num = float(nota_valor)
-                            valores_para_media.append(nota_num)
-                        except (ValueError, TypeError):
-                            pass
-            
-            # Calcula a média e converte de volta para conceito
-            if valores_para_media:
-                media = sum(valores_para_media) / len(valores_para_media)
+            # Para adolescentes_adultos: producao_oral (40%) + producao_escrita (40%) + avaliacoes_de_progresso (20%)
+            if boletim_tipo == 'adolescentes_adultos':
+                nota_producao_oral = None
+                nota_producao_escrita = None
+                nota_avaliacoes = None
                 
-                # Converte média numérica de volta para conceito
-                if media >= 90:
-                    nota_final_conceito = 'A'
-                elif media >= 75:
-                    nota_final_conceito = 'B'
-                elif media >= 60:
-                    nota_final_conceito = 'C'
+                for nota_info in notas_list:
+                    competencia = nota_info.get('competencia')
+                    nota_valor = nota_info.get('nota')
+                    
+                    if competencia and nota_valor and nota_valor != '-':
+                        competencia_norm = BoletimGenerator._normalizar_nome_competencia(competencia.nome)
+                        
+                        # Converte conceito para número
+                        valor_numerico = None
+                        if str(nota_valor).upper() in conceito_para_numero:
+                            valor_numerico = conceito_para_numero[str(nota_valor).upper()]
+                        else:
+                            try:
+                                valor_numerico = float(nota_valor)
+                            except (ValueError, TypeError):
+                                pass
+                        
+                        if valor_numerico is not None:
+                            if competencia_norm == 'producao_oral':
+                                nota_producao_oral = valor_numerico
+                            elif competencia_norm == 'producao_escrita':
+                                nota_producao_escrita = valor_numerico
+                            elif competencia_norm == 'avaliacoes_de_progresso':
+                                nota_avaliacoes = valor_numerico
+                
+                # Calcula média ponderada: 40% + 40% + 20%
+                if nota_producao_oral is not None and nota_producao_escrita is not None and nota_avaliacoes is not None:
+                    media = (nota_producao_oral * 0.4) + (nota_producao_escrita * 0.4) + (nota_avaliacoes * 0.2)
+                    print(f"\n  📊 Cálculo ponderado:")
+                    print(f"      Produção Oral (40%): {nota_producao_oral:.1f}")
+                    print(f"      Produção Escrita (40%): {nota_producao_escrita:.1f}")
+                    print(f"      Avaliações de Progresso (20%): {nota_avaliacoes:.1f}")
+                    print(f"      Média ponderada: {media:.1f}")
+                elif nota_producao_oral is not None and nota_producao_escrita is not None:
+                    # Se não tem avaliacoes, faz média das duas (50% cada)
+                    media = (nota_producao_oral + nota_producao_escrita) / 2
+                    print(f"\n  📊 Cálculo sem avaliações (média simples de 2 notas): {media:.1f}")
                 else:
-                    nota_final_conceito = 'D'
+                    media = None
+                    print(f"\n  ⚠️ Notas insuficientes para calcular média")
                 
-                substituicoes['nota_final'] = nota_final_conceito
-                print(f"\n  📊 Nota Final calculada: {nota_final_conceito} (média {media:.1f} de {len(valores_para_media)} notas)")
+                if media is not None:
+                    # Converte média numérica de volta para conceito
+                    if media >= 90:
+                        nota_final_conceito = 'A'
+                    elif media >= 75:
+                        nota_final_conceito = 'B'
+                    elif media >= 60:
+                        nota_final_conceito = 'C'
+                    else:
+                        nota_final_conceito = 'D'
+                    
+                    substituicoes['nota_final'] = nota_final_conceito
+                    print(f"      Nota Final: {nota_final_conceito}")
+                else:
+                    substituicoes['nota_final'] = 'N/A'
+            
+            # Para material_antigo: média simples de todas as notas
             else:
-                substituicoes['nota_final'] = 'N/A'
-                print(f"\n  ⚠️ Nota Final: N/A (sem notas válidas)")
+                valores_para_media = []
+                
+                for nota_info in notas_list:
+                    nota_valor = nota_info.get('nota')
+                    if nota_valor and nota_valor != '-':
+                        # Converte conceito para número
+                        if str(nota_valor).upper() in conceito_para_numero:
+                            valores_para_media.append(conceito_para_numero[str(nota_valor).upper()])
+                        else:
+                            # Se for numérico, usa direto
+                            try:
+                                nota_num = float(nota_valor)
+                                valores_para_media.append(nota_num)
+                            except (ValueError, TypeError):
+                                pass
+                
+                # Calcula a média e converte de volta para conceito
+                if valores_para_media:
+                    media = sum(valores_para_media) / len(valores_para_media)
+                    
+                    # Converte média numérica de volta para conceito
+                    if media >= 90:
+                        nota_final_conceito = 'A'
+                    elif media >= 75:
+                        nota_final_conceito = 'B'
+                    elif media >= 60:
+                        nota_final_conceito = 'C'
+                    else:
+                        nota_final_conceito = 'D'
+                    
+                    substituicoes['nota_final'] = nota_final_conceito
+                    print(f"\n  📊 Nota Final calculada: {nota_final_conceito} (média {media:.1f} de {len(valores_para_media)} notas)")
+                else:
+                    substituicoes['nota_final'] = 'N/A'
+                    print(f"\n  ⚠️ Nota Final: N/A (sem notas válidas)")
         
         print(f"\nDicionário de substituições completo:")
         for key, value in substituicoes.items():
