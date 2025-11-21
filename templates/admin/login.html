@@ -394,6 +394,109 @@
         .form-input:focus {
             background: rgba(255, 255, 255, 0.15);
         }
+
+        /* Developer Card */
+        .developer-card {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            max-width: 350px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: slideInRight 0.5s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .developer-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #667eea;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .developer-card p {
+            margin: 0.5rem 0;
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .developer-card .services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .service-tag {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .developer-card .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            transition: all 0.3s;
+            text-align: center;
+            width: 100%;
+        }
+
+        .developer-card .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .close-card {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-card:hover {
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .developer-card {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -531,5 +634,30 @@
             });
         });
     </script>
+
+    <!-- Developer Card -->
+    <div class="developer-card" id="developerCard">
+        <button class="close-card" onclick="document.getElementById('developerCard').style.display='none'">×</button>
+        <h3>
+            <span>💼</span>
+            Quer um sistema como este?
+        </h3>
+        <p>
+            Sou <strong>Rômulo V. Portugal</strong>, desenvolvedor especializado em criar soluções personalizadas.
+        </p>
+        <div class="services">
+            <span class="service-tag">🌐 Sites</span>
+            <span class="service-tag">🤖 Automações</span>
+            <span class="service-tag">💻 Sistemas Web</span>
+            <span class="service-tag">📊 Dashboards</span>
+        </div>
+        <p style="font-size: 0.85rem; color: #777;">
+            Automatizo tarefas repetitivas, crio sites profissionais e desenvolvo sistemas sob medida para seu negócio.
+        </p>
+        <a href="https://wa.me/5522999136252?text=Ol%C3%A1!%20Vi%20o%20sistema%20de%20boletins%20e%20gostaria%20de%20saber%20mais%20sobre%20seus%20servi%C3%A7os." target="_blank" class="cta-button">
+            📱 Chamar no WhatsApp
+        </a>
+    </div>
+
 </body>
 </html>
