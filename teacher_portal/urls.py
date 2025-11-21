@@ -57,4 +57,9 @@ urlpatterns = [
         views.detalhes_turma_view,
         name='detalhes_turma'
     ),
+    path(
+        'personalizar/',
+        views.personalizar_dashboard,
+        name='personalizar_dashboard'
+    ),
 ]

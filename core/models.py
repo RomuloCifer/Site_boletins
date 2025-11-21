@@ -619,3 +619,48 @@ class SystemMetrics(models.Model):
     def __str__(self):
         metric_display = dict(self.METRIC_CHOICES).get(self.metric_name, self.metric_name)
         return f"{metric_display}: {self.metric_value} ({self.timestamp.strftime('%Y-%m-%d %H:%M')})"
+
+
+class UserPreference(models.Model):
+    """
+    Preferências de personalização do usuário para o dashboard
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
+    
+    # Opções de tema
+    theme_color = models.CharField(
+        max_length=50,
+        default='purple',
+        help_text='Cor do tema (purple, blue, pink, green, orange)'
+    )
+    
+    dashboard_emoji = models.CharField(
+        max_length=10,
+        default='📚',
+        help_text='Emoji para o dashboard'
+    )
+    
+    background_gradient_start = models.CharField(
+        max_length=7,
+        default='#667eea',
+        help_text='Cor inicial do gradiente (formato hex)'
+    )
+    
+    background_gradient_end = models.CharField(
+        max_length=7,
+        default='#764ba2',
+        help_text='Cor final do gradiente (formato hex)'
+    )
+    
+    custom_welcome_message = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Mensagem personalizada de boas-vindas'
+    )
+    
+    class Meta:
+        verbose_name = "Preferência do Usuário"
+        verbose_name_plural = "Preferências dos Usuários"
+    
+    def __str__(self):
+        return f"Preferências de {self.user.username}"

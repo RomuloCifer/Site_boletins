@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Personalizar Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, {{ preferences.background_gradient_start }}, {{ preferences.background_gradient_end }});
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+        }
+
+        .preview-box {
+            background: linear-gradient(135deg, {{ preferences.background_gradient_start }}, {{ preferences.background_gradient_end }});
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            text-align: center;
+        }
+
+        .preview-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .preview-text {
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        input[type="color"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="text"]:focus,
+        input[type="color"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        .emoji-suggestions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+
+        .emoji-btn {
+            font-size: 2rem;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 10px;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .emoji-btn:hover {
+            transform: scale(1.1);
+            border-color: #667eea;
+        }
+
+        .color-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .preset-themes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .theme-preset {
+            padding: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .theme-preset:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="container">
+        <h1>✨ Personalizar Meu Dashboard</h1>
+
+        <div class="preview-box" id="preview">
+            <div class="preview-emoji" id="previewEmoji">{{ preferences.dashboard_emoji }}</div>
+            <div class="preview-text">
+                {% if preferences.custom_welcome_message %}
+                    {{ preferences.custom_welcome_message }}
+                {% else %}
+                    Portal do Professor
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="emoji">🎨 Escolha seu Emoji</label>
+                <input type="text" 
+                       id="emoji" 
+                       name="dashboard_emoji" 
+                       value="{{ preferences.dashboard_emoji }}"
+                       maxlength="10"
+                       placeholder="Digite ou escolha abaixo">
+                <div class="emoji-suggestions">
+                    <button type="button" class="emoji-btn" onclick="setEmoji('📚')">📚</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🌸')">🌸</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🦋')">🦋</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🌺')">🌺</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🌻')">🌻</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('💐')">💐</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🌹')">🌹</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🎀')">🎀</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('✨')">✨</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('💫')">💫</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('🌙')">🌙</button>
+                    <button type="button" class="emoji-btn" onclick="setEmoji('⭐')">⭐</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🎨 Temas Prontos</label>
+                <div class="preset-themes">
+                    <div class="theme-preset" style="background: linear-gradient(135deg, #667eea, #764ba2);" 
+                         onclick="setTheme('#667eea', '#764ba2')">
+                        Roxo Clássico
+                    </div>
+                    <div class="theme-preset" style="background: linear-gradient(135deg, #f093fb, #f5576c);" 
+                         onclick="setTheme('#f093fb', '#f5576c')">
+                        Rosa Vibrante
+                    </div>
+                    <div class="theme-preset" style="background: linear-gradient(135deg, #4facfe, #00f2fe);" 
+                         onclick="setTheme('#4facfe', '#00f2fe')">
+                        Azul Céu
+                    </div>
+                    <div class="theme-preset" style="background: linear-gradient(135deg, #43e97b, #38f9d7);" 
+                         onclick="setTheme('#43e97b', '#38f9d7')">
+                        Verde Água
+                    </div>
+                    <div class="theme-preset" style="background: linear-gradient(135deg, #fa709a, #fee140);" 
+                         onclick="setTheme('#fa709a', '#fee140')">
+                        Pôr do Sol
+                    </div>
+                    <div class="theme-preset" style="background: linear-gradient(135deg, #a8edea, #fed6e3);" 
+                         onclick="setTheme('#a8edea', '#fed6e3')">
+                        Pastel Suave
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>🎨 Cores Personalizadas</label>
+                <div class="color-group">
+                    <div>
+                        <label for="gradient_start">Cor Inicial</label>
+                        <input type="color" 
+                               id="gradient_start" 
+                               name="gradient_start" 
+                               value="{{ preferences.background_gradient_start }}">
+                    </div>
+                    <div>
+                        <label for="gradient_end">Cor Final</label>
+                        <input type="color" 
+                               id="gradient_end" 
+                               name="gradient_end" 
+                               value="{{ preferences.background_gradient_end }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="welcome">💬 Mensagem de Boas-vindas (opcional)</label>
+                <input type="text" 
+                       id="welcome" 
+                       name="welcome_message" 
+                       value="{{ preferences.custom_welcome_message }}"
+                       maxlength="200"
+                       placeholder="Ex: Bem-vinda ao seu espaço especial!">
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url 'teacher_portal:dashboard' %}'">
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    💾 Salvar Personalização
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function setEmoji(emoji) {
+            document.getElementById('emoji').value = emoji;
+            document.getElementById('previewEmoji').textContent = emoji;
+        }
+
+        function setTheme(start, end) {
+            document.getElementById('gradient_start').value = start;
+            document.getElementById('gradient_end').value = end;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const start = document.getElementById('gradient_start').value;
+            const end = document.getElementById('gradient_end').value;
+            const emoji = document.getElementById('emoji').value;
+            const message = document.getElementById('welcome').value;
+            
+            const preview = document.getElementById('preview');
+            preview.style.background = `linear-gradient(135deg, ${start}, ${end})`;
+            document.getElementById('previewEmoji').textContent = emoji;
+            
+            document.body.style.background = `linear-gradient(135deg, ${start}, ${end})`;
+        }
+
+        // Atualiza preview em tempo real
+        document.getElementById('emoji').addEventListener('input', updatePreview);
+        document.getElementById('gradient_start').addEventListener('input', updatePreview);
+        document.getElementById('gradient_end').addEventListener('input', updatePreview);
+        document.getElementById('welcome').addEventListener('input', function() {
+            const previewText = document.querySelector('.preview-text');
+            previewText.textContent = this.value || 'Portal do Professor';
+        });
+
+        // Auto-hide messages
+        setTimeout(() => {
+            const messages = document.querySelector('.messages');
+            if (messages) {
+                messages.style.opacity = '0';
+                setTimeout(() => messages.remove(), 300);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

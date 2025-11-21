@@ -140,6 +140,18 @@ def dashboard_view(request):
         'total_alunos_completos': total_alunos_completos,
     }
     
+    # Adiciona preferências do usuário se existirem
+    from core.models import UserPreference
+    try:
+        preferences = UserPreference.objects.get(user=request.user)
+        context['user_preferences'] = preferences
+    except UserPreference.DoesNotExist:
+        context['user_preferences'] = None
+    
+    # Todos podem personalizar, mas lidia tem recurso especial
+    context['can_customize'] = True
+    context['is_special_user'] = (request.user.username == 'lidia')
+    
     # Renderiza o template do dashboard (que já criamos)
     return render(request, 'teacher_portal/dashboard.html', context)
 
@@ -450,3 +462,40 @@ def meus_problemas_view(request):
     except Exception as e:
         messages.error(request, f'Erro ao carregar problemas: {str(e)}')
         return redirect('teacher_portal:dashboard')
+
+
+@login_required(login_url='teacher_portal:login')
+def personalizar_dashboard(request):
+    """
+    View para personalizar o dashboard (disponível para todos os usuários)
+    """
+    from core.models import UserPreference
+    
+    # Busca ou cria preferências do usuário
+    preferences, created = UserPreference.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'theme_color': 'purple',
+            'dashboard_emoji': '📚',
+            'background_gradient_start': '#667eea',
+            'background_gradient_end': '#764ba2',
+            'custom_welcome_message': ''
+        }
+    )
+    
+    if request.method == 'POST':
+        # Atualiza as preferências
+        preferences.dashboard_emoji = request.POST.get('dashboard_emoji', '📚')
+        preferences.background_gradient_start = request.POST.get('gradient_start', '#667eea')
+        preferences.background_gradient_end = request.POST.get('gradient_end', '#764ba2')
+        preferences.custom_welcome_message = request.POST.get('welcome_message', '')
+        preferences.save()
+        
+        messages.success(request, '✨ Personalização salva com sucesso!')
+        return redirect('teacher_portal:dashboard')
+    
+    context = {
+        'preferences': preferences,
+    }
+    
+    return render(request, 'teacher_portal/personalizar_dashboard.html', context)

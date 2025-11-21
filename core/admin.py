@@ -2,7 +2,7 @@ from django.contrib import admin # type: ignore
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin #type: ignore
 from django.contrib.auth.models import User # type: ignore
 
-from .models import Professor, Turma, Aluno, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema, ProblemaRelatado, AuditLog, SystemMetrics
+from .models import Professor, Turma, Aluno, Competencia, LancamentoDeNota, TipoTurma, ConfiguracaoSistema, ProblemaRelatado, AuditLog, SystemMetrics, UserPreference
 
 class ProfessorInline(admin.StackedInline): # Inline para o modelo Professor
     model = Professor # Modelo vinculado
@@ -159,3 +159,22 @@ class SystemMetricsAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False  # Não permite edição
+
+
+@admin.register(UserPreference)
+class UserPreferenceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'theme_color', 'dashboard_emoji', 'background_gradient_start', 'background_gradient_end')
+    search_fields = ('user__username',)
+    list_filter = ('theme_color',)
+    
+    fieldsets = (
+        ('Usuário', {
+            'fields': ('user',)
+        }),
+        ('Personalização Visual', {
+            'fields': ('dashboard_emoji', 'background_gradient_start', 'background_gradient_end', 'theme_color')
+        }),
+        ('Mensagens', {
+            'fields': ('custom_welcome_message',)
+        }),
+    )
