@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal do Professor – Sistema de Notas</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>{% if user_preferences %}{{ user_preferences.dashboard_emoji }}{% else %}📚{% endif %}</text></svg>">
+    <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/favicon.png' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -1147,6 +1148,12 @@
         }
     </script>
     {% endif %}
+
+    <!-- Footer com Disclaimer -->
+    <div style="background: rgba(255,255,255,0.1); color: white; text-align: center; padding: 1rem; margin-top: 2rem; font-size: 0.85rem;">
+        <p style="margin: 0;">Sistema de Gestão de Boletins - Cultura Inglesa Nova Friburgo</p>
+        <p style="margin: 0; opacity: 0.8;">Uso interno e educacional - Sem fins lucrativos</p>
+    </div>
 
 </body>
 </html>
