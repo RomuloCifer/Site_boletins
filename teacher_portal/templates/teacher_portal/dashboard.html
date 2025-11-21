@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -1020,9 +1021,59 @@
         🐱
     </button>
 
+    <!-- Hidden audio element -->
+    <audio id="loveAudio" preload="auto">
+        <source src="{% static 'audio/love_song.mp3' %}" type="audio/mpeg">
+    </audio>
+
     <script>
         function showLoveAnimation() {
             const button = document.querySelector('.special-love-button');
+            const audio = document.getElementById('loveAudio');
+            
+            // Audio fade-in and fade-out configuration
+            // Starts at 0:45, peaks at 0:49, fades at 0:55, stops at 0:56
+            const startTime = 45;
+            const peakTime = 49;
+            const fadeStartTime = 55;
+            const endTime = 56;
+            const maxVolume = 0.5;
+            
+            audio.currentTime = startTime;
+            audio.volume = 0;
+            audio.play();
+            
+            let fadeInterval = setInterval(() => {
+                const currentTime = audio.currentTime;
+                
+                if (currentTime < peakTime) {
+                    // Fade-in: 45s to 49s (4 seconds)
+                    const fadeInProgress = (currentTime - startTime) / (peakTime - startTime);
+                    audio.volume = Math.min(fadeInProgress * maxVolume, maxVolume);
+                } 
+                else if (currentTime >= peakTime && currentTime < fadeStartTime) {
+                    // Peak volume: 49s to 55s
+                    audio.volume = maxVolume;
+                }
+                else if (currentTime >= fadeStartTime && currentTime < endTime) {
+                    // Fade-out: 55s to 56s (1 second)
+                    const fadeOutProgress = (endTime - currentTime) / (endTime - fadeStartTime);
+                    audio.volume = Math.max(fadeOutProgress * maxVolume, 0);
+                }
+                else if (currentTime >= endTime) {
+                    // Stop
+                    audio.pause();
+                    audio.currentTime = startTime;
+                    clearInterval(fadeInterval);
+                }
+            }, 50); // Check every 50ms for smooth fade
+            
+            // Safety stop after 11 seconds
+            setTimeout(() => {
+                audio.pause();
+                audio.currentTime = startTime;
+                clearInterval(fadeInterval);
+            }, 11000);
             
             // Button effect
             button.style.transform = 'scale(0.8)';
