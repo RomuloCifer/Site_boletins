@@ -316,6 +316,57 @@
             transform: translateY(-1px);
         }
         
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .filter-section h3 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .filter-btn:hover {
+            background: #f0f4ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .turma-card.hidden {
+            display: none;
+        }
+        
         .no-turmas {
             text-align: center;
             color: white;
@@ -541,10 +592,27 @@
             </div>
         </div>
 
+        <!-- Filtros por Unidade -->
+        <div class="filter-section">
+            <h3>🔍 Filtrar por Unidade</h3>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filtrarPorUnidade('todas')">
+                    📚 Todas as Turmas
+                </button>
+                <button class="filter-btn" onclick="filtrarPorUnidade('nf')">
+                    🦁 Nova Friburgo
+                </button>
+                <button class="filter-btn" onclick="filtrarPorUnidade('rb')">
+                    🏖️ Rio Bonito
+                </button>
+            </div>
+        </div>
+
         <!-- Grid de Turmas -->
         <div class="turmas-grid">
             {% for turma_info in turmas_com_progresso %}
-                <div class="turma-card">
+                <div class="turma-card" 
+                     data-unidade="{% if turma_info.turma.professor_responsavel.user.username == 'lidia' or turma_info.turma.professor_responsavel.user.username|slice:'-2:' == 'nf' %}nf{% elif turma_info.turma.professor_responsavel.user.username|slice:'-2:' == 'rb' %}rb{% else %}nf{% endif %}">
                     <div class="turma-header">
                         <h3 class="turma-nome">{{ turma_info.turma.nome }}</h3>
                         <span class="turma-id">{{ turma_info.turma.identificador_turma }}</span>
@@ -619,6 +687,32 @@
                 bar.style.width = progress + '%';
             });
         });
+        
+        // Função para filtrar turmas por unidade
+        function filtrarPorUnidade(unidade) {
+            const cards = document.querySelectorAll('.turma-card');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            // Remove active de todos os botões
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Adiciona active ao botão clicado
+            event.target.classList.add('active');
+            
+            // Filtra os cards
+            cards.forEach(card => {
+                if (unidade === 'todas') {
+                    card.classList.remove('hidden');
+                } else {
+                    const cardUnidade = card.getAttribute('data-unidade');
+                    if (cardUnidade === unidade) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                }
+            });
+        }
     </script>
 
     <!-- Footer com Disclaimer -->
