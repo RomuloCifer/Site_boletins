@@ -308,6 +308,33 @@ def dashboard_admin_view(request):
     # Analisar problemas do sistema
     problemas_sistema = analisar_problemas_sistema()
     
+    # Buscar professores agrupados por unidade
+    professores_nf = []
+    professores_rb = []
+    
+    for professor in Professor.objects.all().select_related('user'):
+        username = professor.user.username
+        nome_completo = professor.user.get_full_name()
+        nome_display = nome_completo if nome_completo.strip() else username
+        
+        # Identificar unidade
+        if username == 'lidia' or username.endswith('nf'):
+            professores_nf.append({
+                'id': professor.id,
+                'username': username,
+                'nome': nome_display
+            })
+        elif username.endswith('rb'):
+            professores_rb.append({
+                'id': professor.id,
+                'username': username,
+                'nome': nome_display
+            })
+    
+    # Ordenar por nome
+    professores_nf.sort(key=lambda x: x['nome'])
+    professores_rb.sort(key=lambda x: x['nome'])
+    
     context = {
         'turmas_com_progresso': turmas_com_progresso,
         'total_turmas': turmas.count(),
@@ -315,6 +342,8 @@ def dashboard_admin_view(request):
         'total_notas_lancadas_geral': sum(t['notas_lancadas'] for t in turmas_com_progresso),
         'total_notas_possiveis_geral': sum(t['total_notas_possiveis'] for t in turmas_com_progresso),
         'problemas_sistema': problemas_sistema,
+        'professores_nf': professores_nf,
+        'professores_rb': professores_rb,
     }
     
     return render(request, 'admin_panel/dashboard_admin.html', context)

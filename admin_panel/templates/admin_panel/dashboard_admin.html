@@ -337,6 +337,40 @@
             display: flex;
             gap: 1rem;
             flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .professor-select-wrapper {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .professor-select-wrapper.show {
+            display: flex;
+        }
+        
+        .professor-select {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+        
+        .professor-select:hover {
+            border-color: #764ba2;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+        
+        .professor-select:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         .filter-btn {
@@ -605,6 +639,28 @@
                 <button class="filter-btn" onclick="filtrarPorUnidade('rb')">
                     🏖️ Rio Bonito
                 </button>
+                
+                <!-- Dropdown de professores Nova Friburgo -->
+                <div class="professor-select-wrapper" id="select-nf">
+                    <label for="professor-nf" style="color: #666; font-weight: bold;">Professor:</label>
+                    <select id="professor-nf" class="professor-select" onchange="filtrarPorProfessor('nf', this.value)">
+                        <option value="todos">Todos os professores</option>
+                        {% for prof in professores_nf %}
+                            <option value="{{ prof.username }}">{{ prof.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Dropdown de professores Rio Bonito -->
+                <div class="professor-select-wrapper" id="select-rb">
+                    <label for="professor-rb" style="color: #666; font-weight: bold;">Professor:</label>
+                    <select id="professor-rb" class="professor-select" onchange="filtrarPorProfessor('rb', this.value)">
+                        <option value="todos">Todos os professores</option>
+                        {% for prof in professores_rb %}
+                            <option value="{{ prof.username }}">{{ prof.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -612,7 +668,8 @@
         <div class="turmas-grid">
             {% for turma_info in turmas_com_progresso %}
                 <div class="turma-card" 
-                     data-unidade="{% if turma_info.turma.professor_responsavel.user.username == 'lidia' or turma_info.turma.professor_responsavel.user.username|slice:'-2:' == 'nf' %}nf{% elif turma_info.turma.professor_responsavel.user.username|slice:'-2:' == 'rb' %}rb{% else %}nf{% endif %}">
+                     data-unidade="{% if turma_info.turma.professor_responsavel.user.username == 'lidia' or turma_info.turma.professor_responsavel.user.username|slice:'-2:' == 'nf' %}nf{% elif turma_info.turma.professor_responsavel.user.username|slice:'-2:' == 'rb' %}rb{% else %}nf{% endif %}"
+                     data-professor="{{ turma_info.turma.professor_responsavel.user.username }}">
                     <div class="turma-header">
                         <h3 class="turma-nome">{{ turma_info.turma.nome }}</h3>
                         <span class="turma-id">{{ turma_info.turma.identificador_turma }}</span>
@@ -688,9 +745,14 @@
             });
         });
         
+        // Variável para controlar o filtro atual
+        let filtroAtual = {
+            unidade: 'todas',
+            professor: 'todos'
+        };
+        
         // Função para filtrar turmas por unidade
         function filtrarPorUnidade(unidade) {
-            const cards = document.querySelectorAll('.turma-card');
             const buttons = document.querySelectorAll('.filter-btn');
             
             // Remove active de todos os botões
@@ -699,17 +761,56 @@
             // Adiciona active ao botão clicado
             event.target.classList.add('active');
             
-            // Filtra os cards
+            // Atualiza filtro atual
+            filtroAtual.unidade = unidade;
+            filtroAtual.professor = 'todos';
+            
+            // Mostra/esconde dropdown de professores
+            document.getElementById('select-nf').classList.remove('show');
+            document.getElementById('select-rb').classList.remove('show');
+            
+            if (unidade === 'nf') {
+                document.getElementById('select-nf').classList.add('show');
+                document.getElementById('professor-nf').value = 'todos';
+            } else if (unidade === 'rb') {
+                document.getElementById('select-rb').classList.add('show');
+                document.getElementById('professor-rb').value = 'todos';
+            }
+            
+            // Aplica filtro
+            aplicarFiltros();
+        }
+        
+        // Função para filtrar por professor
+        function filtrarPorProfessor(unidade, professor) {
+            filtroAtual.professor = professor;
+            aplicarFiltros();
+        }
+        
+        // Função para aplicar filtros nos cards
+        function aplicarFiltros() {
+            const cards = document.querySelectorAll('.turma-card');
+            
             cards.forEach(card => {
-                if (unidade === 'todas') {
+                const cardUnidade = card.getAttribute('data-unidade');
+                const cardProfessor = card.getAttribute('data-professor');
+                
+                let mostrar = false;
+                
+                if (filtroAtual.unidade === 'todas') {
+                    mostrar = true;
+                } else if (cardUnidade === filtroAtual.unidade) {
+                    if (filtroAtual.professor === 'todos') {
+                        mostrar = true;
+                    } else if (cardProfessor === filtroAtual.professor) {
+                        mostrar = true;
+                    }
+                }
+                
+                if (mostrar) {
                     card.classList.remove('hidden');
                 } else {
-                    const cardUnidade = card.getAttribute('data-unidade');
-                    if (cardUnidade === unidade) {
-                        card.classList.remove('hidden');
-                    } else {
-                        card.classList.add('hidden');
-                    }
+                    card.classList.add('hidden');
                 }
             });
         }
